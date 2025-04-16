@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta content="ie=edge" http-equiv="x-ua-compatible">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+
+    <title>Are AI coding tools really just like language servers? | Giovanni Visonà</title>
+
+
+  <meta name="description" content="AI coding assistants are different from any previous programming support tool"/>
+
+
+
+
+    <meta property="og:type" content="website"/>
+<meta property="og:url" content=""/>
+
+
+  <meta property="og:title" content="Are AI coding tools really just like language servers?"/>
+
+
+
+  <meta property="og:description" content="AI coding assistants are different from any previous programming support tool"/>
+
+
+
+  <meta property="og:image" content="/assets/images/gen/blog/blog-2025-04-13-1260x540.webp"/>
+
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:site" content="@gvisona" />
+<meta name="twitter:creator" content="@gvisona" />
+    <link rel="alternate" type="application/atom+xml" title="Giovanni Visonà" href="/feed.xml">
+    <link rel="icon" href="/assets/images/favicon/favicon.png">
+
+
+    <link href="/assets/css/style.css" rel="stylesheet">
+    <link href="/assets/css/main.css" rel="stylesheet">
+
+    
+      <script>
+          localStorage.getItem('darkMode') === 'true' && document.documentElement.setAttribute('data-bs-theme', 'dark');
+      </script>
+    
+
+    
+      <!-- https://github.com/orestbida/cookieconsent -->
+
+<link rel="stylesheet" href="/assets/css/cookieconsent.css">
+<script defer src="/assets/js/cookieconsent.js"></script>
+
+<!-- Inline script -->
+<script>
+    window.addEventListener('load', function () {
+
+        // obtain plugin
+        var cc = initCookieConsent();
+
+        // run plugin with your configuration
+        cc.run({
+            current_lang: 'en',
+            autoclear_cookies: true,                   // default: false
+            page_scripts: true,                        // default: false
+
+            // mode: 'opt-in'                          // default: 'opt-in'; value: 'opt-in' or 'opt-out'
+            // delay: 0,                               // default: 0
+            // auto_language: '',                      // default: null; could also be 'browser' or 'document'
+            // autorun: true,                          // default: true
+            // force_consent: false,                   // default: false
+            // hide_from_bots: true,                   // default: true
+            // remove_cookie_tables: false             // default: false
+            // cookie_name: 'cc_cookie',               // default: 'cc_cookie'
+            // cookie_expiration: 182,                 // default: 182 (days)
+            // cookie_necessary_only_expiration: 182   // default: disabled
+            // cookie_domain: location.hostname,       // default: current domain
+            // cookie_path: '/',                       // default: root
+            // cookie_same_site: 'Lax',                // default: 'Lax'
+            // use_rfc_cookie: false,                  // default: false
+            // revision: 0,                            // default: 0
+
+            onFirstAction: function (user_preferences, cookie) {
+                // callback triggered only once on the first accept/reject action
+            },
+
+            onAccept: function (cookie) {
+                // callback triggered on the first accept/reject action, and after each page load
+            },
+
+            onChange: function (cookie, changed_preferences) { 
+                // If analytics category is disabled => disable google analytics 
+                if (!cc.allowedCategory('analytics')) { 
+                    typeof gtag === 'function' && gtag('consent', 'update', { 
+                        'analytics_storage': 'denied' 
+                    }); 
+                } 
+            }, 
+
+            languages: {
+                'en': {
+                    consent_modal: {
+                        title: 'We use cookies!',
+                        description: 'Hi, this website uses essential cookies to ensure its proper operation and tracking cookies to understand how you interact with it. The latter will be set only after consent. <button type="button" data-cc="c-settings" class="cc-link">Let me choose</button>',
+                        primary_btn: {
+                            text: 'Accept all',
+                            role: 'accept_all'              // 'accept_selected' or 'accept_all'
+                        },
+                        secondary_btn: {
+                            text: 'Reject all',
+                            role: 'accept_necessary'        // 'settings' or 'accept_necessary'
+                        }
+                    },
+                    settings_modal: {
+                        title: 'Cookie preferences',
+                        save_settings_btn: 'Save settings',
+                        accept_all_btn: 'Accept all',
+                        reject_all_btn: 'Reject all',
+                        close_btn_label: 'Close',
+                        // cookie_table_caption: 'Cookie list',
+                        cookie_table_headers: [
+                            { col1: 'Name' },
+                            { col2: 'Domain' },
+                            { col3: 'Expiration' },
+                            { col4: 'Description' }
+                        ],
+                        blocks: [
+                            {
+                                title: 'Cookie usage 📢',
+                                description: 'I use cookies to ensure the basic functionalities of the website and to enhance your online experience. You can choose for each category to opt-in/out whenever you want. For more details relative to cookies and other sensitive data, please read the full <a href="#" class="cc-link">privacy policy</a>.'
+                            }, {
+                                title: 'Strictly necessary cookies',
+                                description: 'These cookies are essential for the proper functioning of my website. Without these cookies, the website would not work properly',
+                                toggle: {
+                                    value: 'necessary',
+                                    enabled: true,
+                                    readonly: true          // cookie categories with readonly=true are all treated as "necessary cookies"
+                                }
+                            }, {
+                                title: 'Performance and Analytics cookies',
+                                description: 'These cookies allow the website to remember the choices you have made in the past',
+                                toggle: {
+                                    value: 'analytics',     // your cookie category
+                                    enabled: false,
+                                    readonly: false
+                                },
+                                cookie_table: [             // list of all expected cookies
+                                    {
+                                        col1: '^_ga',       // match all cookies starting with "_ga"
+                                        col2: 'google.com',
+                                        col3: '2 years',
+                                        col4: 'description ...',
+                                        is_regex: true
+                                    },
+                                    {
+                                        col1: '_gid',
+                                        col2: 'google.com',
+                                        col3: '1 day',
+                                        col4: 'description ...',
+                                    }
+                                ]
+                            }, {
+                                title: 'Comments & Publishing cookies',
+                                description: 'These cookies allow you to interact, comment and publish to the website',
+                                toggle: {
+                                    value: 'comments',     // your cookie category
+                                    enabled: false,
+                                    readonly: false
+                                },
+                                cookie_table: [             // list of all expected cookies
+                                    {
+                                        col1: 'disqus_unique',       // match all cookies starting with "_ga"
+                                        col2: 'disqus.com',
+                                        col3: '2 years',
+                                        col4: 'used to make comments on blog posts',
+                                        is_regex: false
+                                    }
+                                ]
+                            },
+                            {
+                                title: 'More information',
+                                description: 'For any queries in relation to our policy on cookies and your choices, please <a class="cc-link" href="#yourcontactpage">contact us</a>.',
+                            }
+                        ]
+                    }
+                }
+            }
+        });
+    });
+</script>
+    
+
+    
+
+    <link href="/assets/css/fonts.css" rel="stylesheet">
+
+
+
+
+    
+
+
+
+
+
+
+
+  </head>
+<body class="page page-post page-post-2 has-static-header">
+
+<div class="menu-main-mobile " id="menu-main-mobile">
+  
+  <div class="menu-main-mobile-top">
+    <div id="close-overlay" class="menu-main-close">
+      <div class="hamburger"></div>
+    </div>
+  </div>
+
+  <div class="menu-main-mobile-center">
+    
+      <ul class="menu">
+        
+          <li class="menu-item-home">
+            <a href="/">Home</a>
+          </li>
+        
+          <li class="menu-item-blog">
+            <a href="/blog/">Blog</a>
+          </li>
+        
+          <li class="menu-item-about">
+            <a href="/about/">About</a>
+          </li>
+        
+          <li class="menu-item-résumé">
+            <a href="/resume/">Résumé</a>
+          </li>
+        
+          <li class="menu-item-contact">
+            <a href="/contact/">Contact</a>
+          </li>
+        
+      </ul>
+    
+  </div>
+
+  <div class="menu-main-mobile-bottom">
+    
+      
+
+
+<div class="social" id="social">
+  
+  <a href="https://github.com/gvisona" target="blank" title="Github">
+    <i class="fab fa-github"></i>
+  </a>
+  
+  <a href="https://www.linkedin.com/in/giovanni-visona/" target="blank" title="Linkedin">
+    <i class="fab fa-linkedin"></i>
+  </a>
+  
+  <a href="https://www.gvisona.com/feed.xml" target="blank" title="RSS">
+    <i class="fas fa-feed"></i>
+  </a>
+  
+</div>
+
+    
+    
+  </div>
+
+</div>
+
+
+
+
+<div id="header" class='header '>
+  <div class="container">
+    <div class="logos">
+  <div class="logo logo-desktop">
+    
+      <div class="logo-image">
+        <a href="/">
+          <img height="30px" width="30px" alt="Giovanni Visonà Logo" src="/assets/images/logo/logo.png"/>
+        </a>
+      </div>
+    
+  
+    
+      <div class="logo-text"><a href="/">Giovanni Visonà</a></div>
+    
+    
+  </div>
+
+  <div class="logo logo-desktop-invert">
+    
+    
+      <div class="logo-image">
+        <a href="/">
+          <img height="30px" width="30px" alt="Giovanni Visonà Logo" src="/assets/images/logo/logo-invert.svg"/>
+        </a>
+      </div>
+    
+  
+    
+      <div class="logo-text"><a href="/">Giovanni Visonà</a></div>
+    
+    
+  </div>
+
+  <div class="logo logo-mobile">
+    
+    
+      <div class="logo-image">
+        <a href="/">
+          <img height="28px" width="28px" alt="Giovanni Visonà Logo" src="/assets/images/logo/logo-mobile.svg"/>
+        </a>
+      </div>
+    
+  
+    
+    
+  </div>
+
+
+  <div class="logo logo-mobile-invert">
+    
+    
+      <div class="logo-image">
+        <a href="/">
+          <img height="28px" width="28px" alt="Giovanni Visonà Logo" src="/assets/images/logo/logo-invert-mobile.svg"/>
+        </a>
+      </div>
+    
+  
+    
+
+  </div>
+
+</div>
+
+
+    <div class="menu-main">
+  <ul>
+    
+      
+        
+          
+        
+        <li class=" ">
+          <a href="/" >Home</a>
+        </li>
+      
+    
+      
+        
+          
+        
+        <li class=" ">
+          <a href="/blog/" >Blog</a>
+        </li>
+      
+    
+      
+        
+          
+        
+        <li class=" ">
+          <a href="/about/" >About</a>
+        </li>
+      
+    
+      
+        
+          
+        
+        <li class=" ">
+          <a href="/resume/" >Résumé</a>
+        </li>
+      
+    
+      
+        
+          
+        
+        <li class=" ">
+          <a href="/contact/" >Contact</a>
+        </li>
+      
+    
+  </ul>
+</div>
+
+    
+    <div class="hamburger-trigger" id="toggle-menu-main-mobile">
+  <button class="hamburger">Menu</button>
+</div>
+  </div>
+</div>
+
+<div id="wrapper" class="wrapper">     
+  
+<div class="section">
+  <div class="container post-header">
+    <div class="row justify-content-center">
+
+      <div class="col-12 col-lg-12">
+        
+          <div class="post-image">
+            <img src="/assets/images/gen/blog/blog-2025-04-13-1260x540.webp" alt="Are AI coding tools really just like language servers?" />
+          </div>
+        
+      </div>
+    </div>
+
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-8">
+          
+          <div class="post-title">
+            <h1>Are AI coding tools really just like language servers?</h1>
+          </div>
+
+          
+            <div class="post-description">
+              <p>AI coding assistants are different from any previous programming support tool</p>
+            </div>
+          
+
+          
+            <div class="post-date">13 April 2025</div>
+          
+          
+          
+          <div class="post-categories">
+          
+  
+    
+
+
+
+<div class="category-link">
+<a href="/category/opinion">
+  Opinion
+</a>
+
+</div>
+  
+    
+
+
+
+<div class="category-link">
+<a href="/category/software-engineering">
+  Software Engineering
+</a>
+
+</div>
+  
+
+          </div>
+          
+
+          
+            <div class="post-authors">
+              
+              
+              
+              <div class="author">
+  
+  
+  <div class="author-content">
+    
+
+    
+      <div class="author-date">13 April 2025</div>
+    
+  </div>
+  
+</div>
+              
+            </div>
+          
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section pt-0">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-8">
+        <div class="content"><h2>Who am I?</h2>
+<p>Hi, I am Giovanni, a ML engineer working on biomedical applications of machine learning and AI.
+Creating pipelines to manipulate data and train models takes up most of my normal workdays.
+You can read more about it in the ABOUT page (link).</p>
+<p>Why should you care about my opinions and ideas?
+Let's be honest, you probably have no reason to do that, but I like to think that I am gaining enough firsthand experience
+to offer some worthwhile insights. I'll leave the truth of that to your judgment.</p>
+<p>And as a standard disclaimer, all the opinions expressed here are solely my own.</p>
+<h2>TLDR summary</h2>
+<p>AI coding assistants are different from any previous programming support tool, not just in an incremental/quantitative way, but qualitatively as well.
+In my opinion this difference is a negative for your skills as a software engineer.</p>
+<h2>The crux of the matter: AI tools are qualitatively different</h2>
+<p>I see a lot of discussion surrounding the use of coding assistants like Github Copilot, Cursor AI, and Claude Sonnet.
+Depending on whom you ask, they are either the best invention since the personal computer, or they are the worst overhyped garbage since NFTs.</p>
+<p>A common criticism leveraged against these tools is that their use &quot;atrophies&quot; your skills, to which the standard response is that they are just the
+natural improvement of LSP suggestions and code snippets, and that these addons that we now take for granted do exactly the same thing.
+Essentially, many claim that the difference between an AI assistant and a language server is just a quantitative step, that they are the same thing and AI is
+simply a better version.</p>
+<p>My claim is exactly the opposite:</p>
+<blockquote>
+<p>AI assistants are qualitatively different from any other coding tool. While language servers confirm and correct the answer you already know, AI tools create an answer from scratch.</p>
+</blockquote>
+<p>I use code completion and syntax lookup a lot in my everyday life, and sometimes I struggle to imagine what coding would be like without them.
+But whenever I engage with them, it is always to refine the details of something that is alreay mostly formed in my mind.
+Was the correct <code>numpy</code> function to concatenate two arrays <code>concat</code> or <code>concatenate</code>? In what order should I provide the arguments to <code>json.dump</code>, was the file pointer first or should it be the object to serialize?</p>
+<p>These are all things that I know, but that might need a refresher if I have not used them in a while. More importantly, though, they are not things that will make me a significantly better programmer if I know them by heart (althought you should know them by heart if you use them frequently).
+Compare this to the usage of something like Copilot, where it can take over and offer you a complete piece of code before you have even fully thought through what comes next.
+This process may skip right through the details of the code that you are not too familiar with, and once a problem arises you will probably be stuck.
+You can see this in practice by looking at the &quot;work&quot; of those that take vibe coding seriously.</p>
+<p>Imagine you are planning a trip to another city; using a language server, to me, is like stopping to ask somebody &quot;is this the right way to the train station?&quot;, while AI tools are just like getting out of your house and asking somebody &quot;how do I get to Rome?&quot;.</p>
+<h2>Why I stopped using AI assistants</h2>
+<p>In the past year, I have given a good try to a few of these tools. Mostly I tried to use Github Copilot, because that is the assistant allowed in my workplace.
+The results for me have ranged from underwhelming to outright terrible, not just in the quality of the code, but more so in what they changed in me.</p>
+<p>One of the moments that crystallized my opinion on AI assistants came as I was writing a script for a quick and dirty baseline model, and Copilot helpfully chimed in with a pretty large chunk of code.
+My brain simply went <em>&quot;yeah, that looks about right&quot;</em>, and accepted the suggestion. Wrapping up the script, I ran it with a test case, and it failed miserably.
+After checking the code, I realised that, while the code looked correct, it would not interface at all with the rest of the script. I had inadvertently added to my script the code equivalent of the six-digit hand found in AI-generated images.</p>
+<p>Copilot had pushed my brain into &quot;Lgtm&quot; mode, and I profoundly disliked that. After that episode, I stopped using AI assistants entirely, because in my opinion</p>
+<blockquote>
+<p>AI coding assistants can never make you a better software engineer. At their best, you are buying speed at the cost of skill and knowledge.</p>
+</blockquote>
+<p><em>But what about using them as a chat/to summarize documentation/to explain the code?</em>. To me none of these use cases invalidate the previous point.
+If you want mastery over an area of knowledge, details matter, edge cases matter, nuance matters. And a proper appreciation of them comes from experience, from repeatedly doing the boring thing.
+If you practice reading code, you will get better and faster at understanding someone else's code. If you practice scouring the documentation, you will get good at parsing knowledge from documentation. All of these are transferable skills that I will use over and over in my career, that I can bring with me to any new project or environment.
+I chose to invest in me, and in building up the skillset I want future me to have and be proud of.</p>
+<p><em>Ah but Copilot sucks, you should try XYZ (at the time of writing it's always Claude Sonnet 3.7)</em>. Again, at best I may get better results for my immediate task, and I will be worse off for the next one. If some day AI tools are just that good, I will have to learn to use them or simply open a bakery once they take over. But that day is not today, and using the currently available tools will not make me any better at using these hypothetical perfect tools, since it's highly unlikely they will look anything like what we have now.</p>
+<p><em>Well, for me they are great, I use them everyday</em>. I am glad for you, and I hope they simplify your work.
+If you are the kind of person that prioritizes creating a product over becoming better at writing software, then these tools may be exactly what you need. But they are just not for me.
+Maybe you can find some compromise, e.g. turning AI assistants of two days a week to keep sharp, but to me the advantages are not worth the hassle.</p>
+</div>
+        
+
+    
+
+    
+        <div class="comments">
+            
+
+
+<div id="disqus_thread">
+<button class="load-disqus-button button" onclick="loadDisqus();return false;">Show/Post Comments</button> 
+</div>
+
+<script 
+   data-cookiecategory="comments" type="text/plain" 
+>
+  var disqus_shortname = "gvisona";
+  var disqus_config = function () {
+    this.page.url = '/blog/are-ai-coding-tools-really-just-like-language-servers/';
+    this.page.identifier = '/blog/are-ai-coding-tools-really-just-like-language-servers/';
+  };
+  var is_disqus_loaded = false;
+  function loadDisqus() {  
+    if (!is_disqus_loaded){
+      is_disqus_loaded = true;
+      var d = document, s = d.createElement('script');
+      s.src = '//' + disqus_shortname +'.disqus.com/embed.js';   
+      s.setAttribute('data-timestamp', +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  };
+</script>
+        </div>
+    
+
+
+      </div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+
+
+  <div class="footer">
+  <div class="container">
+    <div class="row">
+
+        <div class="col-12 col-md-4">
+          <div class="footer-info">
+            
+              <h2>Giovanni Visonà</h2>
+            
+
+            
+              <p>Personal blog and résumé. I use this website to share the things I like to learn.</p>
+            
+          </div>
+
+          
+            
+
+
+<div class="social" id="social">
+  
+  <a href="https://github.com/gvisona" target="blank" title="Github">
+    <i class="fab fa-github"></i>
+  </a>
+  
+  <a href="https://www.linkedin.com/in/giovanni-visona/" target="blank" title="Linkedin">
+    <i class="fab fa-linkedin"></i>
+  </a>
+  
+  <a href="https://www.gvisona.com/feed.xml" target="blank" title="RSS">
+    <i class="fas fa-feed"></i>
+  </a>
+  
+</div>
+
+          
+          
+        </div>
+
+        <div class="col-12 col-md-8 mt-gutter mt-md-0">
+          <div class="row justify-content-end">
+
+            
+              <div class="col-12 col-md-3 mt-gutter mt-md-0">
+                <div class="footer-menu">
+                  
+                    <h3>About</h3>
+                  
+                  <div class="menu-footer">
+  <ul>
+    
+      <li class="">
+        <a href="/posts/">Blog</a>
+      </li>
+    
+      <li class="">
+        <a href="/about/">About</a>
+      </li>
+    
+      <li class="">
+        <a href="/contact/">Contact</a>
+      </li>
+    
+  </ul>
+</div>
+
+                </div>
+              </div>
+            
+
+            
+
+            
+        
+          </div>
+        </div>
+      
+    </div>
+    
+
+  </div>
+</div>
+
+
+  <div class="bottom">
+  <div class="container relative">
+    <div class="row align-items-center justify-content-between">
+      <div class="col-auto">
+       
+        
+          <div class="menu-bottom">
+  <ul>
+    
+      <li class="menu-item-Terms and Conditions">
+        <a href="/terms-and-conditions/">Terms and Conditions</a>
+      </li>
+    
+      <li class="menu-item-Privacy Policy">
+        <a href="/privacy-policy/">Privacy Policy</a>
+      </li>
+    
+  </ul>
+</div>
+        
+        
+          <a href="#" data-cc="c-settings">Cookies</a>
+        
+        
+          <div class="copyright">© 2025 Giovanni Visonà</div>
+        
+        
+        
+          <a class="feed" href="/feed.xml">
+            <i class="fas fa-feed"></i>
+          </a>
+        
+        
+      </div>
+         
+    </div>
+  </div>
+</div>
+
+
+<script type="text/javascript" src="/assets/js/scripts.js"></script>
+
+<script type="text/javascript" src="/assets/js/hamburger.js"></script>
+<script type="text/javascript" src="/assets/js/darkModeSwitch.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

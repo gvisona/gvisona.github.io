@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta content="ie=edge" http-equiv="x-ua-compatible">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+
+    <title>Giovanni Visonà</title>
+
+
+  <meta name="description" content="Personal blog of Giovanni Visonà"/>
+
+
+
+
+    <meta property="og:type" content="website"/>
+<meta property="og:url" content=""/>
+
+
+  <meta property="og:title" content="Giovanni Visonà"/>
+
+
+
+  <meta property="og:description" content="Personal blog of Giovanni Visonà"/>
+
+
+
+  <meta property="og:image" content="/assets/images/about/about_cover4.jpg"/>
+
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:site" content="@gvisona" />
+<meta name="twitter:creator" content="@gvisona" />
+    <link rel="alternate" type="application/atom+xml" title="Giovanni Visonà" href="/feed.xml">
+    <link rel="icon" href="/assets/images/favicon/favicon.png">
+
+
+    <link href="/assets/css/style.css" rel="stylesheet">
+    <link href="/assets/css/main.css" rel="stylesheet">
+
+    
+      <script>
+          localStorage.getItem('darkMode') === 'true' && document.documentElement.setAttribute('data-bs-theme', 'dark');
+      </script>
+    
+
+    
+      <!-- https://github.com/orestbida/cookieconsent -->
+
+<link rel="stylesheet" href="/assets/css/cookieconsent.css">
+<script defer src="/assets/js/cookieconsent.js"></script>
+
+<!-- Inline script -->
+<script>
+    window.addEventListener('load', function () {
+
+        // obtain plugin
+        var cc = initCookieConsent();
+
+        // run plugin with your configuration
+        cc.run({
+            current_lang: 'en',
+            autoclear_cookies: true,                   // default: false
+            page_scripts: true,                        // default: false
+
+            // mode: 'opt-in'                          // default: 'opt-in'; value: 'opt-in' or 'opt-out'
+            // delay: 0,                               // default: 0
+            // auto_language: '',                      // default: null; could also be 'browser' or 'document'
+            // autorun: true,                          // default: true
+            // force_consent: false,                   // default: false
+            // hide_from_bots: true,                   // default: true
+            // remove_cookie_tables: false             // default: false
+            // cookie_name: 'cc_cookie',               // default: 'cc_cookie'
+            // cookie_expiration: 182,                 // default: 182 (days)
+            // cookie_necessary_only_expiration: 182   // default: disabled
+            // cookie_domain: location.hostname,       // default: current domain
+            // cookie_path: '/',                       // default: root
+            // cookie_same_site: 'Lax',                // default: 'Lax'
+            // use_rfc_cookie: false,                  // default: false
+            // revision: 0,                            // default: 0
+
+            onFirstAction: function (user_preferences, cookie) {
+                // callback triggered only once on the first accept/reject action
+            },
+
+            onAccept: function (cookie) {
+                // callback triggered on the first accept/reject action, and after each page load
+            },
+
+            onChange: function (cookie, changed_preferences) { 
+                // If analytics category is disabled => disable google analytics 
+                if (!cc.allowedCategory('analytics')) { 
+                    typeof gtag === 'function' && gtag('consent', 'update', { 
+                        'analytics_storage': 'denied' 
+                    }); 
+                } 
+            }, 
+
+            languages: {
+                'en': {
+                    consent_modal: {
+                        title: 'We use cookies!',
+                        description: 'Hi, this website uses essential cookies to ensure its proper operation and tracking cookies to understand how you interact with it. The latter will be set only after consent. <button type="button" data-cc="c-settings" class="cc-link">Let me choose</button>',
+                        primary_btn: {
+                            text: 'Accept all',
+                            role: 'accept_all'              // 'accept_selected' or 'accept_all'
+                        },
+                        secondary_btn: {
+                            text: 'Reject all',
+                            role: 'accept_necessary'        // 'settings' or 'accept_necessary'
+                        }
+                    },
+                    settings_modal: {
+                        title: 'Cookie preferences',
+                        save_settings_btn: 'Save settings',
+                        accept_all_btn: 'Accept all',
+                        reject_all_btn: 'Reject all',
+                        close_btn_label: 'Close',
+                        // cookie_table_caption: 'Cookie list',
+                        cookie_table_headers: [
+                            { col1: 'Name' },
+                            { col2: 'Domain' },
+                            { col3: 'Expiration' },
+                            { col4: 'Description' }
+                        ],
+                        blocks: [
+                            {
+                                title: 'Cookie usage 📢',
+                                description: 'I use cookies to ensure the basic functionalities of the website and to enhance your online experience. You can choose for each category to opt-in/out whenever you want. For more details relative to cookies and other sensitive data, please read the full <a href="#" class="cc-link">privacy policy</a>.'
+                            }, {
+                                title: 'Strictly necessary cookies',
+                                description: 'These cookies are essential for the proper functioning of my website. Without these cookies, the website would not work properly',
+                                toggle: {
+                                    value: 'necessary',
+                                    enabled: true,
+                                    readonly: true          // cookie categories with readonly=true are all treated as "necessary cookies"
+                                }
+                            }, {
+                                title: 'Performance and Analytics cookies',
+                                description: 'These cookies allow the website to remember the choices you have made in the past',
+                                toggle: {
+                                    value: 'analytics',     // your cookie category
+                                    enabled: false,
+                                    readonly: false
+                                },
+                                cookie_table: [             // list of all expected cookies
+                                    {
+                                        col1: '^_ga',       // match all cookies starting with "_ga"
+                                        col2: 'google.com',
+                                        col3: '2 years',
+                                        col4: 'description ...',
+                                        is_regex: true
+                                    },
+                                    {
+                                        col1: '_gid',
+                                        col2: 'google.com',
+                                        col3: '1 day',
+                                        col4: 'description ...',
+                                    }
+                                ]
+                            }, {
+                                title: 'Comments & Publishing cookies',
+                                description: 'These cookies allow you to interact, comment and publish to the website',
+                                toggle: {
+                                    value: 'comments',     // your cookie category
+                                    enabled: false,
+                                    readonly: false
+                                },
+                                cookie_table: [             // list of all expected cookies
+                                    {
+                                        col1: 'disqus_unique',       // match all cookies starting with "_ga"
+                                        col2: 'disqus.com',
+                                        col3: '2 years',
+                                        col4: 'used to make comments on blog posts',
+                                        is_regex: false
+                                    }
+                                ]
+                            },
+                            {
+                                title: 'More information',
+                                description: 'For any queries in relation to our policy on cookies and your choices, please <a class="cc-link" href="#yourcontactpage">contact us</a>.',
+                            }
+                        ]
+                    }
+                }
+            }
+        });
+    });
+</script>
+    
+
+    
+
+    <link href="/assets/css/fonts.css" rel="stylesheet">
+
+
+
+
+    
+
+
+
+
+
+
+
+  </head>
+<body class="page page-home has-static-header">
+
+<div class="menu-main-mobile " id="menu-main-mobile">
+  
+  <div class="menu-main-mobile-top">
+    <div id="close-overlay" class="menu-main-close">
+      <div class="hamburger"></div>
+    </div>
+  </div>
+
+  <div class="menu-main-mobile-center">
+    
+      <ul class="menu">
+        
+          <li class="menu-item-home active ">
+            <a href="/">Home</a>
+          </li>
+        
+          <li class="menu-item-blog">
+            <a href="/blog/">Blog</a>
+          </li>
+        
+          <li class="menu-item-about">
+            <a href="/about/">About</a>
+          </li>
+        
+          <li class="menu-item-résumé">
+            <a href="/resume/">Résumé</a>
+          </li>
+        
+          <li class="menu-item-contact">
+            <a href="/contact/">Contact</a>
+          </li>
+        
+      </ul>
+    
+  </div>
+
+  <div class="menu-main-mobile-bottom">
+    
+      
+
+
+<div class="social" id="social">
+  
+  <a href="https://github.com/gvisona" target="blank" title="Github">
+    <i class="fab fa-github"></i>
+  </a>
+  
+  <a href="https://www.linkedin.com/in/giovanni-visona/" target="blank" title="Linkedin">
+    <i class="fab fa-linkedin"></i>
+  </a>
+  
+  <a href="https://orcid.org/0000-0002-7878-5448" target="blank" title="ORCID">
+    <i class="fab fa-orcid"></i>
+  </a>
+  
+</div>
+
+    
+    
+  </div>
+
+</div>
+
+
+
+
+<div id="header" class='header '>
+  <div class="container">
+    <div class="logos">
+  <div class="logo logo-desktop">
+    
+      <div class="logo-image">
+        <a href="/">
+          <img height="30px" width="30px" alt="Giovanni Visonà Logo" src="/assets/images/logo/logo.png"/>
+        </a>
+      </div>
+    
+  
+    
+      <div class="logo-text"><a href="/">Giovanni Visonà</a></div>
+    
+    
+  </div>
+
+  <div class="logo logo-desktop-invert">
+    
+    
+      <div class="logo-image">
+        <a href="/">
+          <img height="30px" width="30px" alt="Giovanni Visonà Logo" src="/assets/images/logo/logo-invert.svg"/>
+        </a>
+      </div>
+    
+  
+    
+      <div class="logo-text"><a href="/">Giovanni Visonà</a></div>
+    
+    
+  </div>
+
+  <div class="logo logo-mobile">
+    
+    
+      <div class="logo-image">
+        <a href="/">
+          <img height="28px" width="28px" alt="Giovanni Visonà Logo" src="/assets/images/logo/logo-mobile.svg"/>
+        </a>
+      </div>
+    
+  
+    
+    
+  </div>
+
+
+  <div class="logo logo-mobile-invert">
+    
+    
+      <div class="logo-image">
+        <a href="/">
+          <img height="28px" width="28px" alt="Giovanni Visonà Logo" src="/assets/images/logo/logo-invert-mobile.svg"/>
+        </a>
+      </div>
+    
+  
+    
+
+  </div>
+
+</div>
+
+
+    <div class="menu-main">
+  <ul>
+    
+      
+        
+          
+        
+        <li class="active ">
+          <a href="/" >Home</a>
+        </li>
+      
+    
+      
+        
+          
+        
+        <li class=" ">
+          <a href="/blog/" >Blog</a>
+        </li>
+      
+    
+      
+        
+          
+        
+        <li class=" ">
+          <a href="/about/" >About</a>
+        </li>
+      
+    
+      
+        
+          
+        
+        <li class=" ">
+          <a href="/resume/" >Résumé</a>
+        </li>
+      
+    
+      
+        
+          
+        
+        <li class=" ">
+          <a href="/contact/" >Contact</a>
+        </li>
+      
+    
+  </ul>
+</div>
+
+    
+    <div class="hamburger-trigger" id="toggle-menu-main-mobile">
+  <button class="hamburger">Menu</button>
+</div>
+  </div>
+</div>
+
+<div id="wrapper" class="wrapper">     
+  <div class="section">
+  <div class="container">
+    <div class="row">
+      
+      <div class="col-12">
+        <div class="title">
+  <div class="col-12 ">
+  <div class="row align-items-center">
+
+    <div class="col-12 col-md-6">
+      
+
+      
+
+      
+      <div class="title-heading">
+        <h1>Hi, I am Giovanni</h1>
+      </div>
+      
+
+      
+      <div class="title-description">
+        <p>I like to explore Biomedical ML, Software Engineering, and good science. Join me in my learning journey through my blog.</p>
+      </div>
+      
+
+      
+      <div class="title-social">
+        
+
+
+<div class="social" id="social">
+  
+  <a href="https://github.com/gvisona" target="blank" title="Github">
+    <i class="fab fa-github"></i>
+  </a>
+  
+  <a href="https://www.linkedin.com/in/giovanni-visona/" target="blank" title="Linkedin">
+    <i class="fab fa-linkedin"></i>
+  </a>
+  
+  <a href="https://orcid.org/0000-0002-7878-5448" target="blank" title="ORCID">
+    <i class="fab fa-orcid"></i>
+  </a>
+  
+</div>
+
+      </div>
+      
+
+    </div>
+
+    
+    <div class="col-12 col-md-6 mt-3 mt-md-0">
+      <div class="title-image">
+        <img  alt="Hi, I am Giovanni"  src="/assets/images/about/about_cover4.jpg" />
+      </div>
+    </div>
+    
+  </div>
+  </div>
+</div>
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+<div class="section bg-base-bg pt-0">
+  <div class="container">
+    <div class="row">
+
+      
+
+
+<div class="col-12">
+  <div class="grid-header grid-header-align-left">
+    <h2>Giovanni's Blog</h2>
+    
+  </div>
+</div>
+
+
+      
+
+        
+        
+        
+        
+        <div class="col-12 col-md-4 col-lg-4mt-0 mb-0 mb-3 mb-md-6">
+          
+
+<div class="card card-post card-column card-has-thumbnail ">
+
+  
+    <div class="card-thumbnail ">
+      <a href="/blog/ai-coding-tools:-a-faustian-bargain-for-your-skills/"><img alt="AI coding tools: a Faustian bargain for your skills" src="/assets/images/gen/blog/blog-2025-04-13-thumbnail.webp"/></a>
+    </div>
+  
+
+  <div class="card-content">
+    
+    <div class="card-meta">
+
+      
+        <div class="card-authors">
+          
+        </div>
+      
+
+    </div>  
+    
+
+    <div class="card-title">
+      <h3>
+        <a href="/blog/ai-coding-tools:-a-faustian-bargain-for-your-skills/">AI coding tools: a Faustian bargain for your skills</a>
+      </h3>
+    </div>
+
+    
+
+    
+      <div class="card-description">
+        <p>Why I think AI coding assistants are different from any other programming support tool</p>
+      </div>
+    
+
+    
+      <div class="card-categories mt-auto">
+        
+      </div>
+    
+
+    
+
+  </div>
+</div>
+        </div>
+      
+
+      
+
+
+
+
+
+<div class="col-12">
+    <div class="grid-footer grid-footer-align-center">
+        <a href="/blog" class="grid-view-more-button">
+            More Posts 
+        </a>
+    </div>
+</div>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+
+  <div class="footer">
+  <div class="container">
+    <div class="row">
+
+        <div class="col-12 col-md-4">
+          <div class="footer-info">
+            
+              <h2>Giovanni Visonà</h2>
+            
+
+            
+              <p>Personal blog and résumé. I use this website to share the things I like to learn. The content of this blog is not permitted for use in training generative artificial intelligence (AI) models without explicit consent. The author reserves all rights to license uses of this work for generative AI training and development.</p>
+            
+          </div>
+
+          
+            
+
+
+<div class="social" id="social">
+  
+  <a href="https://github.com/gvisona" target="blank" title="Github">
+    <i class="fab fa-github"></i>
+  </a>
+  
+  <a href="https://www.linkedin.com/in/giovanni-visona/" target="blank" title="Linkedin">
+    <i class="fab fa-linkedin"></i>
+  </a>
+  
+  <a href="https://orcid.org/0000-0002-7878-5448" target="blank" title="ORCID">
+    <i class="fab fa-orcid"></i>
+  </a>
+  
+</div>
+
+          
+          
+        </div>
+
+        <div class="col-12 col-md-8 mt-gutter mt-md-0">
+          <div class="row justify-content-end">
+
+            
+              <div class="col-12 col-md-3 mt-gutter mt-md-0">
+                <div class="footer-menu">
+                  
+                    <h3>About</h3>
+                  
+                  <div class="menu-footer">
+  <ul>
+    
+      <li class="">
+        <a href="/posts/">Blog</a>
+      </li>
+    
+      <li class="">
+        <a href="/about/">About</a>
+      </li>
+    
+      <li class="">
+        <a href="/contact/">Contact</a>
+      </li>
+    
+  </ul>
+</div>
+
+                </div>
+              </div>
+            
+
+            
+
+            
+        
+          </div>
+        </div>
+      
+    </div>
+    
+
+  </div>
+</div>
+
+
+  <div class="bottom">
+  <div class="container relative">
+    <div class="row align-items-center justify-content-between">
+      <div class="col-auto">
+       
+        
+          <div class="menu-bottom">
+  <ul>
+    
+      <li class="menu-item-Terms and Conditions">
+        <a href="/terms-and-conditions/">Terms and Conditions</a>
+      </li>
+    
+      <li class="menu-item-Privacy Policy">
+        <a href="/privacy-policy/">Privacy Policy</a>
+      </li>
+    
+  </ul>
+</div>
+        
+        
+          <a href="#" data-cc="c-settings">Cookies</a>
+        
+        
+          <div class="copyright">© 2025 Giovanni Visonà</div>
+        
+        
+        
+          <a class="feed" href="/feed.xml">
+            <i class="fas fa-feed"></i>
+          </a>
+        
+        
+      </div>
+         
+    </div>
+  </div>
+</div>
+
+
+<script type="text/javascript" src="/assets/js/scripts.js"></script>
+
+<script type="text/javascript" src="/assets/js/hamburger.js"></script>
+<script type="text/javascript" src="/assets/js/darkModeSwitch.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

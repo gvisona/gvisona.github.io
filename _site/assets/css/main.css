@@ -1,0 +1,45 @@
+
+:root {
+  --font-family-base: Open Sans, sans-serif;
+  --font-family-heading: Schibsted Grotesk, sans-serif;
+  --font-family-monospace: Fira Mono, monospace;
+  --font-family-logo: Schibsted Grotesk, sans-serif;
+
+  --color-primary-bg: #EC255A;
+  --color-primary-bg-2: #eed2d9;
+  --color-primary-bg-3: #eed2d9;
+  --color-primary-text: #f9fafb;
+  --color-base-bg: #ffffff;
+  --color-base-bg-2: #ebeef0;
+  --color-base-bg-3: #d6dbe0;
+  --color-base-text: #191a1a;
+  --color-base-text-2: #555555;
+  --color-header-text:  #191a1a;
+  
+  --logo-text-font-size: 28px;
+  --logo-text-font-weight: 500;
+
+  --menu-font-family: Open Sans, sans-serif;
+  --menu-font-size: ;
+  --menu-text-transform: "Capitalize";
+  --menu-font-weight: 400;
+
+  --header-height: 60px;
+  --section-padding: 80px;
+  --card-border-radius: 5px;
+  --button-border-radius: 5px;
+}
+
+html[data-bs-theme='dark'] {
+  --color-primary-bg: #EC255A;
+  --color-primary-bg-2: #eed2d9;
+  --color-primary-bg-3: #eed2d9;
+  --color-primary-text: #f9fafb;
+  --color-base-bg: #121418;
+  --color-base-bg-2: #1d2026;
+  --color-base-bg-3: #24272d;
+  --color-base-text: #F4F4F5;
+  --color-base-text-2: #D1D5DB;
+  --color-logo-text: #F4F4F5;
+  --color-header-text: #F4F4F5;
+}
