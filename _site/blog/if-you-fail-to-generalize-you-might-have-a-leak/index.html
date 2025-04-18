@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta content="ie=edge" http-equiv="x-ua-compatible">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+
+    <title>If you fail to generalize, you might have a leak | Giovanni Visonà</title>
+
+
+  <meta name="description" content="How improper data handling can degrade the generalization performance of your models"/>
+
+
+
+
+    <meta property="og:type" content="website"/>
+<meta property="og:url" content=""/>
+
+
+  <meta property="og:title" content="If you fail to generalize, you might have a leak"/>
+
+
+
+  <meta property="og:description" content="How improper data handling can degrade the generalization performance of your models"/>
+
+
+
+  <meta property="og:image" content="/assets/images/gen/blog/blog-2025-04-17/blog-2025-04-17-1260x540.webp"/>
+
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:site" content="@gvisona" />
+<meta name="twitter:creator" content="@gvisona" />
+    <link rel="alternate" type="application/atom+xml" title="Giovanni Visonà" href="/feed.xml">
+    <link rel="icon" href="/assets/images/favicon/favicon.png">
+
+
+    <link href="/assets/css/style.css" rel="stylesheet">
+    <link href="/assets/css/main.css" rel="stylesheet">
+
+    
+      <script>
+          localStorage.getItem('darkMode') === 'true' && document.documentElement.setAttribute('data-bs-theme', 'dark');
+      </script>
+    
+
+    
+      <!-- https://github.com/orestbida/cookieconsent -->
+
+<link rel="stylesheet" href="/assets/css/cookieconsent.css">
+<script defer src="/assets/js/cookieconsent.js"></script>
+
+<!-- Inline script -->
+<script>
+    window.addEventListener('load', function () {
+
+        // obtain plugin
+        var cc = initCookieConsent();
+
+        // run plugin with your configuration
+        cc.run({
+            current_lang: 'en',
+            autoclear_cookies: true,                   // default: false
+            page_scripts: true,                        // default: false
+
+            // mode: 'opt-in'                          // default: 'opt-in'; value: 'opt-in' or 'opt-out'
+            // delay: 0,                               // default: 0
+            // auto_language: '',                      // default: null; could also be 'browser' or 'document'
+            // autorun: true,                          // default: true
+            // force_consent: false,                   // default: false
+            // hide_from_bots: true,                   // default: true
+            // remove_cookie_tables: false             // default: false
+            // cookie_name: 'cc_cookie',               // default: 'cc_cookie'
+            // cookie_expiration: 182,                 // default: 182 (days)
+            // cookie_necessary_only_expiration: 182   // default: disabled
+            // cookie_domain: location.hostname,       // default: current domain
+            // cookie_path: '/',                       // default: root
+            // cookie_same_site: 'Lax',                // default: 'Lax'
+            // use_rfc_cookie: false,                  // default: false
+            // revision: 0,                            // default: 0
+
+            onFirstAction: function (user_preferences, cookie) {
+                // callback triggered only once on the first accept/reject action
+            },
+
+            onAccept: function (cookie) {
+                // callback triggered on the first accept/reject action, and after each page load
+            },
+
+            onChange: function (cookie, changed_preferences) { 
+                // If analytics category is disabled => disable google analytics 
+                if (!cc.allowedCategory('analytics')) { 
+                    typeof gtag === 'function' && gtag('consent', 'update', { 
+                        'analytics_storage': 'denied' 
+                    }); 
+                } 
+            }, 
+
+            languages: {
+                'en': {
+                    consent_modal: {
+                        title: 'We use cookies!',
+                        description: 'Hi, this website uses essential cookies to ensure its proper operation and tracking cookies to understand how you interact with it. The latter will be set only after consent. <button type="button" data-cc="c-settings" class="cc-link">Let me choose</button>',
+                        primary_btn: {
+                            text: 'Accept all',
+                            role: 'accept_all'              // 'accept_selected' or 'accept_all'
+                        },
+                        secondary_btn: {
+                            text: 'Reject all',
+                            role: 'accept_necessary'        // 'settings' or 'accept_necessary'
+                        }
+                    },
+                    settings_modal: {
+                        title: 'Cookie preferences',
+                        save_settings_btn: 'Save settings',
+                        accept_all_btn: 'Accept all',
+                        reject_all_btn: 'Reject all',
+                        close_btn_label: 'Close',
+                        // cookie_table_caption: 'Cookie list',
+                        cookie_table_headers: [
+                            { col1: 'Name' },
+                            { col2: 'Domain' },
+                            { col3: 'Expiration' },
+                            { col4: 'Description' }
+                        ],
+                        blocks: [
+                            {
+                                title: 'Cookie usage 📢',
+                                description: 'I use cookies to ensure the basic functionalities of the website and to enhance your online experience. You can choose for each category to opt-in/out whenever you want. For more details relative to cookies and other sensitive data, please read the full <a href="#" class="cc-link">privacy policy</a>.'
+                            }, {
+                                title: 'Strictly necessary cookies',
+                                description: 'These cookies are essential for the proper functioning of my website. Without these cookies, the website would not work properly',
+                                toggle: {
+                                    value: 'necessary',
+                                    enabled: true,
+                                    readonly: true          // cookie categories with readonly=true are all treated as "necessary cookies"
+                                }
+                            }, {
+                                title: 'Performance and Analytics cookies',
+                                description: 'These cookies allow the website to remember the choices you have made in the past',
+                                toggle: {
+                                    value: 'analytics',     // your cookie category
+                                    enabled: false,
+                                    readonly: false
+                                },
+                                cookie_table: [             // list of all expected cookies
+                                    {
+                                        col1: '^_ga',       // match all cookies starting with "_ga"
+                                        col2: 'google.com',
+                                        col3: '2 years',
+                                        col4: 'description ...',
+                                        is_regex: true
+                                    },
+                                    {
+                                        col1: '_gid',
+                                        col2: 'google.com',
+                                        col3: '1 day',
+                                        col4: 'description ...',
+                                    }
+                                ]
+                            }, {
+                                title: 'Comments & Publishing cookies',
+                                description: 'These cookies allow you to interact, comment and publish to the website',
+                                toggle: {
+                                    value: 'comments',     // your cookie category
+                                    enabled: false,
+                                    readonly: false
+                                },
+                                cookie_table: [             // list of all expected cookies
+                                    {
+                                        col1: 'disqus_unique',       // match all cookies starting with "_ga"
+                                        col2: 'disqus.com',
+                                        col3: '2 years',
+                                        col4: 'used to make comments on blog posts',
+                                        is_regex: false
+                                    }
+                                ]
+                            },
+                            {
+                                title: 'More information',
+                                description: 'For any queries in relation to our policy on cookies and your choices, please <a class="cc-link" href="#yourcontactpage">contact us</a>.',
+                            }
+                        ]
+                    }
+                }
+            }
+        });
+    });
+</script>
+    
+
+    
+
+    <link href="/assets/css/fonts.css" rel="stylesheet">
+
+
+
+
+    
+
+
+
+
+
+
+
+  </head>
+<body class="page page-post page-post-2 has-static-header">
+
+<div class="menu-main-mobile " id="menu-main-mobile">
+  
+  <div class="menu-main-mobile-top">
+    <div id="close-overlay" class="menu-main-close">
+      <div class="hamburger"></div>
+    </div>
+  </div>
+
+  <div class="menu-main-mobile-center">
+    
+      <ul class="menu">
+        
+          <li class="menu-item-home">
+            <a href="/">Home</a>
+          </li>
+        
+          <li class="menu-item-blog">
+            <a href="/blog/">Blog</a>
+          </li>
+        
+          <li class="menu-item-about">
+            <a href="/about/">About</a>
+          </li>
+        
+          <li class="menu-item-résumé">
+            <a href="/resume/">Résumé</a>
+          </li>
+        
+          <li class="menu-item-contact">
+            <a href="/contact/">Contact</a>
+          </li>
+        
+      </ul>
+    
+  </div>
+
+  <div class="menu-main-mobile-bottom">
+    
+      
+
+
+<div class="social" id="social">
+  
+  <a href="https://github.com/gvisona" target="blank" title="Github">
+    <i class="fab fa-github"></i>
+  </a>
+  
+  <a href="https://www.linkedin.com/in/giovanni-visona/" target="blank" title="Linkedin">
+    <i class="fab fa-linkedin"></i>
+  </a>
+  
+  <a href="https://orcid.org/0000-0002-7878-5448" target="blank" title="ORCID">
+    <i class="fab fa-orcid"></i>
+  </a>
+  
+</div>
+
+    
+    
+  </div>
+
+</div>
+
+
+
+
+<div id="header" class='header '>
+  <div class="container">
+    <div class="logos">
+  <div class="logo logo-desktop">
+    
+      <div class="logo-image">
+        <a href="/">
+          <img height="30px" width="30px" alt="Giovanni Visonà Logo" src="/assets/images/logo/logo.png"/>
+        </a>
+      </div>
+    
+  
+    
+      <div class="logo-text"><a href="/">Giovanni Visonà</a></div>
+    
+    
+  </div>
+
+  <div class="logo logo-desktop-invert">
+    
+    
+      <div class="logo-image">
+        <a href="/">
+          <img height="30px" width="30px" alt="Giovanni Visonà Logo" src="/assets/images/logo/logo-invert.svg"/>
+        </a>
+      </div>
+    
+  
+    
+      <div class="logo-text"><a href="/">Giovanni Visonà</a></div>
+    
+    
+  </div>
+
+  <div class="logo logo-mobile">
+    
+    
+      <div class="logo-image">
+        <a href="/">
+          <img height="28px" width="28px" alt="Giovanni Visonà Logo" src="/assets/images/logo/logo-mobile.svg"/>
+        </a>
+      </div>
+    
+  
+    
+    
+  </div>
+
+
+  <div class="logo logo-mobile-invert">
+    
+    
+      <div class="logo-image">
+        <a href="/">
+          <img height="28px" width="28px" alt="Giovanni Visonà Logo" src="/assets/images/logo/logo-invert-mobile.svg"/>
+        </a>
+      </div>
+    
+  
+    
+
+  </div>
+
+</div>
+
+
+    <div class="menu-main">
+  <ul>
+    
+      
+        
+          
+        
+        <li class=" ">
+          <a href="/" >Home</a>
+        </li>
+      
+    
+      
+        
+          
+        
+        <li class=" ">
+          <a href="/blog/" >Blog</a>
+        </li>
+      
+    
+      
+        
+          
+        
+        <li class=" ">
+          <a href="/about/" >About</a>
+        </li>
+      
+    
+      
+        
+          
+        
+        <li class=" ">
+          <a href="/resume/" >Résumé</a>
+        </li>
+      
+    
+      
+        
+          
+        
+        <li class=" ">
+          <a href="/contact/" >Contact</a>
+        </li>
+      
+    
+  </ul>
+</div>
+
+    
+    <div class="hamburger-trigger" id="toggle-menu-main-mobile">
+  <button class="hamburger">Menu</button>
+</div>
+  </div>
+</div>
+
+<div id="wrapper" class="wrapper">     
+  
+<div class="section">
+  <div class="container post-header">
+    <div class="row justify-content-center">
+
+      <div class="col-12 col-lg-12">
+        
+          <div class="post-image">
+            <img src="/assets/images/gen/blog/blog-2025-04-17/blog-2025-04-17-1260x540.webp" alt="If you fail to generalize, you might have a leak" />
+          </div>
+        
+      </div>
+    </div>
+
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-10">
+          
+          <div class="post-title">
+            <h1>If you fail to generalize, you might have a leak</h1>
+          </div>
+
+          
+            <div class="post-description">
+              <p>How improper data handling can degrade the generalization performance of your models</p>
+            </div>
+          
+
+          
+            <div class="post-date">17 April 2025</div>
+          
+          
+          
+          <div class="post-categories">
+          
+  
+    
+
+
+
+<div class="category-link">
+<a href="/category/machine-learning">
+  Machine Learning
+</a>
+
+</div>
+  
+    
+
+
+
+<div class="category-link">
+<a href="/category/ml-fundamentals">
+  ML Fundamentals
+</a>
+
+</div>
+  
+
+          </div>
+          
+
+          
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section pt-0">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-10">
+        <div class="content"><h2>Who am I?</h2>
+<p>Hi, I am Giovanni, a ML engineer working on biomedical applications of machine learning and AI.
+Creating pipelines to manipulate data and train models takes up most of my normal workdays.
+You can read more about it <a href="www.gvisona.com/about">in the About Me page</a>.</p>
+<h2>Why am I making this post?</h2>
+<p>Machine learning is a deeply experimental science, one in which research work is often conducted with far less rigour than other fields.
+In my opinion, most machine learning practitioners would benefit from strengthening their fundamental knowledge of statistics, robust data analysis,
+and general good scientific practices. To me, this holds especially true in this time of hype for AI agents that will supposedly replace the human factor completely.</p>
+<p>This post is the first in a series that I have planned, which focuses on <strong>The Fundamentals of Machine Learning</strong>.
+I will use this series to discuss the crucial aspects of ML to consider for producing robust models and, ultimately, good science.</p>
+<h2>Code availability</h2>
+<p>The code to reproduce the plots presented in this post can be found on my <a href="https://github.com/gvisona/ML_Notebooks/tree/data_leakage">GitHub</a>.</p>
+<h1>Data Leakage</h1>
+<p>What is it, and why should we worry about it?</p>
+<p><em>Data Leakage</em> (or sometimes <em>Information Leakage</em> and, in some specific cases, <em>Train/Test Leakage</em>) occurs when your model has access to information that it should not have at training time. In this case, your model is likely to learn the patterns of this additional information.</p>
+<p>In general</p>
+<blockquote>
+<p>If you share information about your test data at training time, your model will likely make use of it. Afterwards, when making predictions with new data, you will not have access to the same information, and your model will fail to generalize.</p>
+</blockquote>
+<p>Data leakage is often a subtle problem, that can arise in a wide variety of manners. This makes it difficult to spot when examining someone else's work, and you may end up trusting overly optimistic results.</p>
+<p>For example, you may accidentally cause data leakage if you perform feature selection or impute missing values before splitting your dataset into train and test data. Or, in the case of time series data, if you improperly handle the chronological order of data points, using the future to predict the past. This latter concept is the reason that many Transformer architectures make use of causal masking at training time to avoid &quot;cheating.&quot;</p>
+<p>As a general rule of thumb, try to isolate your test data as much as possible. Is there any possible way that your model could be cheating the actual prediction task? If I were to come to you with freshly collected data, would you have all you need to make predictions? Did you make use of your test data at all to process the training data?</p>
+<p>Let us see an example of how much data leakage can affect the estimated performance of a machine learning model.</p>
+<h1>Case study: finding signals in random noise</h1>
+<p>Let us examine a pretty extreme example of the effects of data leakage: we will sample random data, and attempt to train a model on it. Specifically, we will examine what happens depending on the order in which we perform feature selection and split the dataset.</p>
+<p>I have created here a sample task that makes use of a classifier model (Logistic Regression) because classification metrics are a lot more intuitive than those used for regression problems. However, I want to emphasize that the types of issues that we will see are not limited to classification or to simple models.</p>
+<h2>Creating the dataset</h2>
+<p>Let us sample 10,000 features for 500 data points from a standard Gaussian distribution.
+Similarly, we sample a binary label for each data point from a fair Bernoulli distribution.</p>
+<pre class="language-python"><code class="language-python">n_samples <span class="token operator">=</span> <span class="token number">500</span>
+n_features <span class="token operator">=</span> <span class="token number">10_000</span>
+np<span class="token punctuation">.</span>random<span class="token punctuation">.</span>seed<span class="token punctuation">(</span><span class="token number">42</span><span class="token punctuation">)</span>
+input_features <span class="token operator">=</span> np<span class="token punctuation">.</span>random<span class="token punctuation">.</span>normal<span class="token punctuation">(</span>size<span class="token operator">=</span><span class="token punctuation">(</span>n_samples<span class="token punctuation">,</span> n_features<span class="token punctuation">)</span><span class="token punctuation">)</span>
+labels <span class="token operator">=</span> np<span class="token punctuation">.</span>random<span class="token punctuation">.</span>binomial<span class="token punctuation">(</span>n<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span> p<span class="token operator">=</span><span class="token number">0.5</span><span class="token punctuation">,</span> size<span class="token operator">=</span>n_samples<span class="token punctuation">)</span>
+dataset <span class="token operator">=</span> pd<span class="token punctuation">.</span>DataFrame<span class="token punctuation">(</span>np<span class="token punctuation">.</span>hstack<span class="token punctuation">(</span><span class="token punctuation">[</span>labels<span class="token punctuation">.</span>reshape<span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> input_features<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">,</span> 
+                       columns<span class="token operator">=</span><span class="token punctuation">[</span><span class="token string">"Label"</span><span class="token punctuation">]</span> <span class="token operator">+</span> <span class="token punctuation">[</span><span class="token string-interpolation"><span class="token string">f"x</span><span class="token interpolation"><span class="token punctuation">{</span>i<span class="token punctuation">}</span></span><span class="token string">"</span></span> <span class="token keyword">for</span> i <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span>n_features<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">)</span></code></pre>
+<p>As you can imagine, there should be no way to get a good predictive model using these features and labels. After all, we drew them completely at random.</p>
+<p>Indeed, if we look at some features picked at random and see how they relate to the labels, there does not appear to be any signal.</p>
+<figure >
+  <img src="/assets/images/gen/content/blog-2025-04-17/fig1.png" alt="Boxplots for the selected features">
+  <figcaption>
+    <h4>Features are unrelated to labels.</h4>
+    <p>Randomly selected features and their relationship to the binary labels. The reported p-values are obtained with Kendall's Tau statistical test.</p>
+  </figcaption>
+</figure>
+<p>Now, let us train a classifier in two separate ways.</p>
+<h2>Correct workflow: first split the dataset, then filter</h2>
+<p>We begin with the correct workflow, where we set aside the test set and do not touch it at all until it is time to evaluate the model.</p>
+<p>We create the training and test splits:</p>
+<pre class="language-python"><code class="language-python">splits <span class="token operator">=</span> train_test_split<span class="token punctuation">(</span>dataset<span class="token punctuation">,</span> test_size<span class="token operator">=</span><span class="token number">0.2</span><span class="token punctuation">,</span> random_state<span class="token operator">=</span><span class="token number">42</span><span class="token punctuation">)</span>
+train_split<span class="token punctuation">,</span> test_split <span class="token operator">=</span> splits</code></pre>
+<p>We select 4 features for our predictor, using univariate feature selection:</p>
+<pre class="language-python"><code class="language-python">input_features <span class="token operator">=</span> train_split<span class="token punctuation">.</span>drop<span class="token punctuation">(</span><span class="token string">"Label"</span><span class="token punctuation">,</span> axis<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">)</span>
+training_labels <span class="token operator">=</span> train_split<span class="token punctuation">[</span><span class="token string">"Label"</span><span class="token punctuation">]</span>
+feature_selector <span class="token operator">=</span> SelectKBest<span class="token punctuation">(</span>f_classif<span class="token punctuation">,</span> k<span class="token operator">=</span><span class="token number">4</span><span class="token punctuation">)</span>
+feature_selector<span class="token punctuation">.</span>fit<span class="token punctuation">(</span>input_features<span class="token punctuation">,</span> training_labels<span class="token punctuation">)</span>
+selected_features <span class="token operator">=</span> feature_selector<span class="token punctuation">.</span>get_feature_names_out<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>tolist<span class="token punctuation">(</span><span class="token punctuation">)</span></code></pre>
+<p>Finally, we train a logistic regression model on the training data, and measure its accuracy on the test set. In this case, accuracy is an informative classification metric as the dataset is balanced.</p>
+<pre class="language-python"><code class="language-python">clf <span class="token operator">=</span> LogisticRegressionCV<span class="token punctuation">(</span>cv<span class="token operator">=</span><span class="token number">5</span><span class="token punctuation">,</span> random_state<span class="token operator">=</span><span class="token number">42</span><span class="token punctuation">)</span><span class="token punctuation">.</span>fit<span class="token punctuation">(</span>train_split<span class="token punctuation">[</span>selected_features<span class="token punctuation">]</span><span class="token punctuation">,</span> train_split<span class="token punctuation">[</span><span class="token string">"Label"</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+test_accuracy <span class="token operator">=</span> clf<span class="token punctuation">.</span>score<span class="token punctuation">(</span>test_split<span class="token punctuation">[</span>selected_features<span class="token punctuation">]</span><span class="token punctuation">,</span> test_split<span class="token punctuation">[</span><span class="token string">"Label"</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Accuracy on the test set: </span><span class="token interpolation"><span class="token punctuation">{</span>test_accuracy<span class="token punctuation">:</span><span class="token format-spec">.1%</span><span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+
+<span class="token comment"># Accuracy on the test set: 46.0%</span></code></pre>
+<p>The final result is that our model showcases a predictive performance that is a bit worse than a coin flip. This is as expected, since we are training a model to recognize spurious patterns that do not really contain information on the labels.</p>
+<h2>Wrong workflow: first filter the features, then split</h2>
+<p>Now let us see the effect of messing up our workflow. We will first perform feature selection, and only then will we split it into train/test sets.</p>
+<p>We select again 4 features with the same methodology:</p>
+<pre class="language-python"><code class="language-python">input_features <span class="token operator">=</span> dataset<span class="token punctuation">.</span>drop<span class="token punctuation">(</span><span class="token string">"Label"</span><span class="token punctuation">,</span> axis<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">)</span>
+training_labels <span class="token operator">=</span> dataset<span class="token punctuation">[</span><span class="token string">"Label"</span><span class="token punctuation">]</span>
+feature_selector <span class="token operator">=</span> SelectKBest<span class="token punctuation">(</span>f_classif<span class="token punctuation">,</span> k<span class="token operator">=</span><span class="token number">4</span><span class="token punctuation">)</span>
+feature_selector<span class="token punctuation">.</span>fit<span class="token punctuation">(</span>input_features<span class="token punctuation">,</span> training_labels<span class="token punctuation">)</span>
+selected_features <span class="token operator">=</span> feature_selector<span class="token punctuation">.</span>get_feature_names_out<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>tolist<span class="token punctuation">(</span><span class="token punctuation">)</span>
+filtered_dataset <span class="token operator">=</span> dataset<span class="token punctuation">[</span><span class="token punctuation">[</span><span class="token string">"Label"</span><span class="token punctuation">]</span> <span class="token operator">+</span> selected_features<span class="token punctuation">]</span></code></pre>
+<p>The filtered dataset is split in the same way as before:</p>
+<pre class="language-python"><code class="language-python">splits <span class="token operator">=</span> train_test_split<span class="token punctuation">(</span>filtered_dataset<span class="token punctuation">,</span> test_size<span class="token operator">=</span><span class="token number">0.2</span><span class="token punctuation">,</span> random_state<span class="token operator">=</span><span class="token number">42</span><span class="token punctuation">)</span>
+train_split<span class="token punctuation">,</span> test_split <span class="token operator">=</span> splits</code></pre>
+<p>And the training and evaluation of the model are much the same:</p>
+<pre class="language-python"><code class="language-python">clf <span class="token operator">=</span> LogisticRegressionCV<span class="token punctuation">(</span>cv<span class="token operator">=</span><span class="token number">5</span><span class="token punctuation">,</span> random_state<span class="token operator">=</span><span class="token number">42</span><span class="token punctuation">)</span><span class="token punctuation">.</span>fit<span class="token punctuation">(</span>train_split<span class="token punctuation">[</span>selected_features<span class="token punctuation">]</span><span class="token punctuation">,</span> train_split<span class="token punctuation">[</span><span class="token string">"Label"</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+test_accuracy <span class="token operator">=</span> clf<span class="token punctuation">.</span>score<span class="token punctuation">(</span>test_split<span class="token punctuation">[</span>selected_features<span class="token punctuation">]</span><span class="token punctuation">,</span> test_split<span class="token punctuation">[</span><span class="token string">"Label"</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Accuracy on the test set: </span><span class="token interpolation"><span class="token punctuation">{</span>test_accuracy<span class="token punctuation">:</span><span class="token format-spec">.1%</span><span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+
+<span class="token comment"># Accuracy on the test set: 68.0%</span></code></pre>
+<p><em>Et voilà</em>, just like that, we get almost 70% accuracy. We have managed to extract a signal where none existed before.
+Obviously, if you attempt to use this model on some newly collected data from the same distribution, it will fail miserably.
+We have provided an overly optimistic estimate of the model performance, and we might not even notice until we see it fail to generalize as we try it on new test cases.</p>
+<h1>The lesson</h1>
+<p>Improper evaluation of models is a major cause of failure when attempting to translate research results to real-world applications (the so-called &quot;AI-Chasm,&quot; which I will discuss in a future post).
+This issue is particularly prevalent within the biomedical field, with many innovations failing to convert optimistic results to clinical practice.</p>
+<p>As a guideline:</p>
+<blockquote>
+<p>Try to make your model evaluation as strict as possible, and as close to the desired application scenario as feasible. Ensure that no information on the test set can be gained by looking at your training procedure.</p>
+</blockquote>
+<hr>
+</div>
+         <p xmlns:cc="http://creativecommons.org/ns#" xmlns:dct="http://purl.org/dc/terms/"><span property="dct:title">This blogpost</span> by <a rel="cc:attributionURL dct:creator" property="cc:attributionName" href="https://www.gvisona.com">Giovanni Visonà</a> is licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">CC BY-NC-SA 4.0<img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/sa.svg?ref=chooser-v1" alt=""></a></p> 
+
+        
+
+    
+
+    
+        <div class="comments">
+            
+
+
+<div id="disqus_thread">
+<button class="load-disqus-button button" onclick="loadDisqus();return false;">Show/Post Comments</button> 
+</div>
+
+<script 
+   data-cookiecategory="comments" type="text/plain" 
+>
+  var disqus_shortname = "gvisona";
+  var disqus_config = function () {
+    this.page.url = '/blog/if-you-fail-to-generalize-you-might-have-a-leak/';
+    this.page.identifier = '/blog/if-you-fail-to-generalize-you-might-have-a-leak/';
+  };
+  var is_disqus_loaded = false;
+  function loadDisqus() {  
+    if (!is_disqus_loaded){
+      is_disqus_loaded = true;
+      var d = document, s = d.createElement('script');
+      s.src = '//' + disqus_shortname +'.disqus.com/embed.js';   
+      s.setAttribute('data-timestamp', +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  };
+</script>
+        </div>
+    
+
+
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+
+  <div class="footer">
+  <div class="container">
+    <div class="row">
+
+        <div class="col-12 col-md-4">
+          <div class="footer-info">
+            
+              <h2>Giovanni Visonà</h2>
+            
+
+            
+              <p>Personal blog and résumé. I use this website to share the things I like to learn. The content of this blog is not permitted for use in training generative artificial intelligence (AI) models without explicit consent. The author reserves all rights to license uses of this work for generative AI training and development.</p>
+            
+          </div>
+
+          
+            
+
+
+<div class="social" id="social">
+  
+  <a href="https://github.com/gvisona" target="blank" title="Github">
+    <i class="fab fa-github"></i>
+  </a>
+  
+  <a href="https://www.linkedin.com/in/giovanni-visona/" target="blank" title="Linkedin">
+    <i class="fab fa-linkedin"></i>
+  </a>
+  
+  <a href="https://orcid.org/0000-0002-7878-5448" target="blank" title="ORCID">
+    <i class="fab fa-orcid"></i>
+  </a>
+  
+</div>
+
+          
+          
+        </div>
+
+        <div class="col-12 col-md-8 mt-gutter mt-md-0">
+          <div class="row justify-content-end">
+
+            
+              <div class="col-12 col-md-3 mt-gutter mt-md-0">
+                <div class="footer-menu">
+                  
+                    <h3>About</h3>
+                  
+                  <div class="menu-footer">
+  <ul>
+    
+      <li class="">
+        <a href="/posts/">Blog</a>
+      </li>
+    
+      <li class="">
+        <a href="/about/">About</a>
+      </li>
+    
+      <li class="">
+        <a href="/contact/">Contact</a>
+      </li>
+    
+  </ul>
+</div>
+
+                </div>
+              </div>
+            
+
+            
+
+            
+        
+          </div>
+        </div>
+      
+    </div>
+    
+
+  </div>
+</div>
+
+
+  <div class="bottom">
+  <div class="container relative">
+    <div class="row align-items-center justify-content-between">
+      <div class="col-auto">
+       
+        
+          <div class="menu-bottom">
+  <ul>
+    
+      <li class="menu-item-Terms and Conditions">
+        <a href="/terms-and-conditions/">Terms and Conditions</a>
+      </li>
+    
+      <li class="menu-item-Privacy Policy">
+        <a href="/privacy-policy/">Privacy Policy</a>
+      </li>
+    
+  </ul>
+</div>
+        
+        
+          <a href="#" data-cc="c-settings">Cookies</a>
+        
+        
+          <div class="copyright">© 2025 Giovanni Visonà</div>
+        
+        
+        
+          <a class="feed" href="/feed.xml">
+            <i class="fas fa-feed"></i>
+          </a>
+        
+        
+      </div>
+         
+    </div>
+  </div>
+</div>
+
+
+<script type="text/javascript" src="/assets/js/scripts.js"></script>
+
+<script type="text/javascript" src="/assets/js/hamburger.js"></script>
+<script type="text/javascript" src="/assets/js/darkModeSwitch.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>
