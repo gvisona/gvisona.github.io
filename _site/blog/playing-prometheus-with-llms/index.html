@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta content="ie=edge" http-equiv="x-ua-compatible">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+
+    <title>Playing Prometheus with LLMs | Giovanni Visonà</title>
+
+
+  <meta name="description" content="How do you get a language model to make use of other tools?"/>
+
+
+
+
+    <meta property="og:type" content="website"/>
+<meta property="og:url" content=""/>
+
+
+  <meta property="og:title" content="Playing Prometheus with LLMs"/>
+
+
+
+  <meta property="og:description" content="How do you get a language model to make use of other tools?"/>
+
+
+
+  <meta property="og:image" content="/assets/images/gen/blog/blog-2025-04-22/blog-2025-04-22-1260x540.webp"/>
+
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:site" content="@gvisona" />
+<meta name="twitter:creator" content="@gvisona" />
+    <link rel="alternate" type="application/atom+xml" title="Giovanni Visonà" href="/feed.xml">
+    <link rel="icon" href="/assets/images/favicon/favicon.png">
+
+
+    <link href="/assets/css/style.css" rel="stylesheet">
+    <link href="/assets/css/main.css" rel="stylesheet">
+
+    
+      <script>
+          localStorage.getItem('darkMode') === 'true' && document.documentElement.setAttribute('data-bs-theme', 'dark');
+      </script>
+    
+
+    
+      <!-- https://github.com/orestbida/cookieconsent -->
+
+<link rel="stylesheet" href="/assets/css/cookieconsent.css">
+<script defer src="/assets/js/cookieconsent.js"></script>
+
+<!-- Inline script -->
+<script>
+    window.addEventListener('load', function () {
+
+        // obtain plugin
+        var cc = initCookieConsent();
+
+        // run plugin with your configuration
+        cc.run({
+            current_lang: 'en',
+            autoclear_cookies: true,                   // default: false
+            page_scripts: true,                        // default: false
+
+            // mode: 'opt-in'                          // default: 'opt-in'; value: 'opt-in' or 'opt-out'
+            // delay: 0,                               // default: 0
+            // auto_language: '',                      // default: null; could also be 'browser' or 'document'
+            // autorun: true,                          // default: true
+            // force_consent: false,                   // default: false
+            // hide_from_bots: true,                   // default: true
+            // remove_cookie_tables: false             // default: false
+            // cookie_name: 'cc_cookie',               // default: 'cc_cookie'
+            // cookie_expiration: 182,                 // default: 182 (days)
+            // cookie_necessary_only_expiration: 182   // default: disabled
+            // cookie_domain: location.hostname,       // default: current domain
+            // cookie_path: '/',                       // default: root
+            // cookie_same_site: 'Lax',                // default: 'Lax'
+            // use_rfc_cookie: false,                  // default: false
+            // revision: 0,                            // default: 0
+
+            onFirstAction: function (user_preferences, cookie) {
+                // callback triggered only once on the first accept/reject action
+            },
+
+            onAccept: function (cookie) {
+                // callback triggered on the first accept/reject action, and after each page load
+            },
+
+            onChange: function (cookie, changed_preferences) { 
+                // If analytics category is disabled => disable google analytics 
+                if (!cc.allowedCategory('analytics')) { 
+                    typeof gtag === 'function' && gtag('consent', 'update', { 
+                        'analytics_storage': 'denied' 
+                    }); 
+                } 
+            }, 
+
+            languages: {
+                'en': {
+                    consent_modal: {
+                        title: 'We use cookies!',
+                        description: 'Hi, this website uses essential cookies to ensure its proper operation and tracking cookies to understand how you interact with it. The latter will be set only after consent. <button type="button" data-cc="c-settings" class="cc-link">Let me choose</button>',
+                        primary_btn: {
+                            text: 'Accept all',
+                            role: 'accept_all'              // 'accept_selected' or 'accept_all'
+                        },
+                        secondary_btn: {
+                            text: 'Reject all',
+                            role: 'accept_necessary'        // 'settings' or 'accept_necessary'
+                        }
+                    },
+                    settings_modal: {
+                        title: 'Cookie preferences',
+                        save_settings_btn: 'Save settings',
+                        accept_all_btn: 'Accept all',
+                        reject_all_btn: 'Reject all',
+                        close_btn_label: 'Close',
+                        // cookie_table_caption: 'Cookie list',
+                        cookie_table_headers: [
+                            { col1: 'Name' },
+                            { col2: 'Domain' },
+                            { col3: 'Expiration' },
+                            { col4: 'Description' }
+                        ],
+                        blocks: [
+                            {
+                                title: 'Cookie usage 📢',
+                                description: 'I use cookies to ensure the basic functionalities of the website and to enhance your online experience. You can choose for each category to opt-in/out whenever you want. For more details relative to cookies and other sensitive data, please read the full <a href="#" class="cc-link">privacy policy</a>.'
+                            }, {
+                                title: 'Strictly necessary cookies',
+                                description: 'These cookies are essential for the proper functioning of my website. Without these cookies, the website would not work properly',
+                                toggle: {
+                                    value: 'necessary',
+                                    enabled: true,
+                                    readonly: true          // cookie categories with readonly=true are all treated as "necessary cookies"
+                                }
+                            }, {
+                                title: 'Performance and Analytics cookies',
+                                description: 'These cookies allow the website to remember the choices you have made in the past',
+                                toggle: {
+                                    value: 'analytics',     // your cookie category
+                                    enabled: false,
+                                    readonly: false
+                                },
+                                cookie_table: [             // list of all expected cookies
+                                    {
+                                        col1: '^_ga',       // match all cookies starting with "_ga"
+                                        col2: 'google.com',
+                                        col3: '2 years',
+                                        col4: 'description ...',
+                                        is_regex: true
+                                    },
+                                    {
+                                        col1: '_gid',
+                                        col2: 'google.com',
+                                        col3: '1 day',
+                                        col4: 'description ...',
+                                    }
+                                ]
+                            }, {
+                                title: 'Comments & Publishing cookies',
+                                description: 'These cookies allow you to interact, comment and publish to the website',
+                                toggle: {
+                                    value: 'comments',     // your cookie category
+                                    enabled: false,
+                                    readonly: false
+                                },
+                                cookie_table: [             // list of all expected cookies
+                                    {
+                                        col1: 'disqus_unique',       // match all cookies starting with "_ga"
+                                        col2: 'disqus.com',
+                                        col3: '2 years',
+                                        col4: 'used to make comments on blog posts',
+                                        is_regex: false
+                                    }
+                                ]
+                            },
+                            {
+                                title: 'More information',
+                                description: 'For any queries in relation to our policy on cookies and your choices, please <a class="cc-link" href="#yourcontactpage">contact us</a>.',
+                            }
+                        ]
+                    }
+                }
+            }
+        });
+    });
+</script>
+    
+
+    
+
+    <link href="/assets/css/fonts.css" rel="stylesheet">
+
+
+
+
+    
+
+
+
+
+
+
+
+  </head>
+<body class="page page-post page-post-2 has-static-header">
+
+<div class="menu-main-mobile " id="menu-main-mobile">
+  
+  <div class="menu-main-mobile-top">
+    <div id="close-overlay" class="menu-main-close">
+      <div class="hamburger"></div>
+    </div>
+  </div>
+
+  <div class="menu-main-mobile-center">
+    
+      <ul class="menu">
+        
+          <li class="menu-item-home">
+            <a href="/">Home</a>
+          </li>
+        
+          <li class="menu-item-blog">
+            <a href="/blog/">Blog</a>
+          </li>
+        
+          <li class="menu-item-about">
+            <a href="/about/">About</a>
+          </li>
+        
+          <li class="menu-item-résumé">
+            <a href="/resume/">Résumé</a>
+          </li>
+        
+          <li class="menu-item-contact">
+            <a href="/contact/">Contact</a>
+          </li>
+        
+      </ul>
+    
+  </div>
+
+  <div class="menu-main-mobile-bottom">
+    
+      
+
+
+<div class="social" id="social">
+  
+  <a href="https://github.com/gvisona" target="blank" title="Github">
+    <i class="fab fa-github"></i>
+  </a>
+  
+  <a href="https://www.linkedin.com/in/giovanni-visona/" target="blank" title="Linkedin">
+    <i class="fab fa-linkedin"></i>
+  </a>
+  
+  <a href="https://orcid.org/0000-0002-7878-5448" target="blank" title="ORCID">
+    <i class="fab fa-orcid"></i>
+  </a>
+  
+</div>
+
+    
+    
+  </div>
+
+</div>
+
+
+
+
+<div id="header" class='header '>
+  <div class="container">
+    <div class="logos">
+  <div class="logo logo-desktop">
+    
+      <div class="logo-image">
+        <a href="/">
+          <img height="30px" width="30px" alt="Giovanni Visonà Logo" src="/assets/images/logo/logo.png"/>
+        </a>
+      </div>
+    
+  
+    
+      <div class="logo-text"><a href="/">Giovanni Visonà</a></div>
+    
+    
+  </div>
+
+  <div class="logo logo-desktop-invert">
+    
+    
+      <div class="logo-image">
+        <a href="/">
+          <img height="30px" width="30px" alt="Giovanni Visonà Logo" src="/assets/images/logo/logo-invert.svg"/>
+        </a>
+      </div>
+    
+  
+    
+      <div class="logo-text"><a href="/">Giovanni Visonà</a></div>
+    
+    
+  </div>
+
+  <div class="logo logo-mobile">
+    
+    
+      <div class="logo-image">
+        <a href="/">
+          <img height="28px" width="28px" alt="Giovanni Visonà Logo" src="/assets/images/logo/logo-mobile.svg"/>
+        </a>
+      </div>
+    
+  
+    
+    
+  </div>
+
+
+  <div class="logo logo-mobile-invert">
+    
+    
+      <div class="logo-image">
+        <a href="/">
+          <img height="28px" width="28px" alt="Giovanni Visonà Logo" src="/assets/images/logo/logo-invert-mobile.svg"/>
+        </a>
+      </div>
+    
+  
+    
+
+  </div>
+
+</div>
+
+
+    <div class="menu-main">
+  <ul>
+    
+      
+        
+          
+        
+        <li class=" ">
+          <a href="/" >Home</a>
+        </li>
+      
+    
+      
+        
+          
+        
+        <li class=" ">
+          <a href="/blog/" >Blog</a>
+        </li>
+      
+    
+      
+        
+          
+        
+        <li class=" ">
+          <a href="/about/" >About</a>
+        </li>
+      
+    
+      
+        
+          
+        
+        <li class=" ">
+          <a href="/resume/" >Résumé</a>
+        </li>
+      
+    
+      
+        
+          
+        
+        <li class=" ">
+          <a href="/contact/" >Contact</a>
+        </li>
+      
+    
+  </ul>
+</div>
+
+    
+    <div class="hamburger-trigger" id="toggle-menu-main-mobile">
+  <button class="hamburger">Menu</button>
+</div>
+  </div>
+</div>
+
+<div id="wrapper" class="wrapper">     
+  
+<div class="section">
+  <div class="container post-header">
+    <div class="row justify-content-center">
+
+      <div class="col-12 col-lg-12">
+        
+          <div class="post-image">
+            <img src="/assets/images/gen/blog/blog-2025-04-22/blog-2025-04-22-1260x540.webp" alt="Playing Prometheus with LLMs" />
+          </div>
+        
+      </div>
+    </div>
+
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-10">
+          
+          <div class="post-title">
+            <h1>Playing Prometheus with LLMs</h1>
+          </div>
+
+          
+            <div class="post-description">
+              <p>How do you get a language model to make use of other tools?</p>
+            </div>
+          
+
+          
+            <div class="post-date">22 April 2025</div>
+          
+          
+          
+          <div class="post-categories">
+          
+  
+    
+
+
+
+<div class="category-link">
+<a href="/category/machine-learning">
+  Machine Learning
+</a>
+
+</div>
+  
+    
+
+
+
+<div class="category-link">
+<a href="/category/large-language-models">
+  Large Language Models
+</a>
+
+</div>
+  
+
+          </div>
+          
+
+          
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section pt-0">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-10">
+        <div class="content"><h2>Who am I?</h2>
+<p>Hi, I am Giovanni, a ML engineer working on biomedical applications of machine learning and AI.
+Creating pipelines to manipulate data and train models takes up most of my normal workdays.
+You can read more about it <a href="www.gvisona.com/about">in the About Me page</a>.</p>
+<h2>Why am I making this post?</h2>
+<p>As I work to understand new developments in machine learning, I will share my learning process so that someone else will hopefully find some use in it as well.</p>
+<p>The basic implementation and exploration of the chat with the LLM model Claude are inspired by Thorsten Ball's great post on <a href="https://ampcode.com/how-to-build-an-agent">how to build an agent in Go</a>.</p>
+<p>You can also find a recreation of the Go code in the original post on <a href="https://github.com/gvisona/go-ai-coding-agent">my GitHub</a>.</p>
+<h2>Code availability</h2>
+<p>The code to reproduce the results presented can be found in the repository <a href="https://github.com/gvisona/python-ai-agent">gvisona/python-ai-agent</a>.
+To run the code, you will need to create a <code>.env</code> file that contains the value for the environment variable <code>ANTHROPIC_API_KEY</code>. You can obtain an API key for accessing Anthropic's Claude on the <a href="https://docs.anthropic.com/en/api/admin-api/apikeys/get-api-key">Anthropic website</a>.</p>
+<h1>Agents</h1>
+<p>What is an Agent? This term has been gaining a lot of traction in the discourse surrounding Large Language Models (LLMs), mostly to refer to a model that interacts with its environment, gathers information, and uses that data to make decisions and take actions independently to achieve predetermined goals</p>
+<p>But what does this really mean? In a practical setting, I like the definition of agent as &quot;an LLM that can call on other tools.&quot; Essentially</p>
+<blockquote>
+<p>What distinguishes an agent from a simple LLM is the capability to decide to make use of some external piece of software, paired with the ability to somehow run this software and analyse its output.</p>
+</blockquote>
+<p>So if you want to play the modern Prometheus (not Dr. Frankenstein) and gift the usage of tools to LLMs, how should you go about it?</p>
+<p>Let us go through a bare-bones implementation of a chat with an LLM and see how we can get it to call on other software.</p>
+<h2>A simple chat implementation</h2>
+<p>We can make use of the <a href="https://github.com/anthropics/anthropic-sdk-python">Anthropic Python SDK</a> to interact with the Claude API.
+Let us create a simple chat script (also found as <a href="https://github.com/gvisona/python-ai-agent/blob/main/simple_chat.py">simple_chat.py</a> in the codebase) that alternates receiving input from the user and running inference queries using Claude Sonnet 3.7:</p>
+<pre class="language-python"><code class="language-python"><span class="token keyword">from</span> dotenv <span class="token keyword">import</span> load_dotenv <span class="token comment"># To pull in the ANTHROPIC_API_KEY</span>
+<span class="token keyword">from</span> anthropic <span class="token keyword">import</span> Anthropic
+
+load_dotenv<span class="token punctuation">(</span><span class="token punctuation">)</span>
+client <span class="token operator">=</span> Anthropic<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">run_inference</span><span class="token punctuation">(</span>messages<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    response <span class="token operator">=</span> client<span class="token punctuation">.</span>messages<span class="token punctuation">.</span>create<span class="token punctuation">(</span>
+        max_tokens<span class="token operator">=</span><span class="token number">1024</span><span class="token punctuation">,</span>
+        messages<span class="token operator">=</span>messages<span class="token punctuation">,</span>
+        model<span class="token operator">=</span><span class="token string">"claude-3-7-sonnet-latest"</span><span class="token punctuation">,</span>
+        stream<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span>
+    <span class="token keyword">return</span> response
+
+<span class="token keyword">def</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"Chat with Claude 3.7 (use 'Ctrl-c to quit)"</span><span class="token punctuation">)</span>
+    conversation <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    <span class="token keyword">while</span> <span class="token boolean">True</span><span class="token punctuation">:</span>
+        message <span class="token operator">=</span> <span class="token builtin">input</span><span class="token punctuation">(</span><span class="token string">"\u001b[94mYou\u001b[0m: "</span><span class="token punctuation">)</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">""</span><span class="token punctuation">)</span>
+        conversation<span class="token punctuation">.</span>append<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">"role"</span><span class="token punctuation">:</span> <span class="token string">"user"</span><span class="token punctuation">,</span> <span class="token string">"content"</span><span class="token punctuation">:</span> message<span class="token punctuation">}</span><span class="token punctuation">)</span>
+        response <span class="token operator">=</span> run_inference<span class="token punctuation">(</span>conversation<span class="token punctuation">)</span>
+
+        <span class="token keyword">for</span> content <span class="token keyword">in</span> response<span class="token punctuation">.</span>content<span class="token punctuation">:</span>
+            <span class="token keyword">if</span> content<span class="token punctuation">.</span><span class="token builtin">type</span> <span class="token operator">==</span> <span class="token string">"text"</span><span class="token punctuation">:</span>
+                conversation<span class="token punctuation">.</span>append<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">"role"</span><span class="token punctuation">:</span> <span class="token string">"assistant"</span><span class="token punctuation">,</span> <span class="token string">"content"</span><span class="token punctuation">:</span> content<span class="token punctuation">.</span>text<span class="token punctuation">}</span><span class="token punctuation">)</span>
+                <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"\u001b[93mClaude\u001b[0m: </span><span class="token interpolation"><span class="token punctuation">{</span>content<span class="token punctuation">.</span>text<span class="token punctuation">}</span></span><span class="token string">\n"</span></span><span class="token punctuation">)</span>
+
+
+<span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">"__main__"</span><span class="token punctuation">:</span>
+    main<span class="token punctuation">(</span><span class="token punctuation">)</span></code></pre>
+<p>We just implemented an interactive chat with an LLM in ~30 lines of code, not too bad, eh?</p>
+<p>Running the script, we can see that we can freely interact with Claude, and retain the context between messages:</p>
+<blockquote>
+<pre><code>You: I am Giovanni, what's your name?
+
+Claude: I'm Claude, an AI assistant created by Anthropic. It's nice to meet you, Giovanni! 
+How can I help you today?
+
+You: Given my name, where do you think I come from?
+
+Claude: Based on your name Giovanni, you likely have Italian heritage. Giovanni is a 
+traditional Italian male name (the Italian equivalent of &quot;John&quot; in English). Of course, 
+people with Italian names can be from many places around the world, including Italy 
+itself, countries with significant Italian immigration like the United States, 
+Argentina, Brazil, Canada, or Australia, or you might have Italian ancestry while being
+from somewhere else entirely. Without more information, I can only note that your name 
+has Italian origins.
+
+You:
+</code></pre>
+</blockquote>
+<p>Pretty good, but how do we get it to interact with other software?</p>
+<p>The real trick is that agents never directly do that, but we can fake it and pretend like they do. Let's see a really simple implementation of this concept.</p>
+<h2>&quot;Faking&quot; tool usage</h2>
+<p>Let us imagine that we want Claude to check whether a certain IP address is reachable. Instead of somehow embedding this functionality in the model, we can all come up with a secret code that we agree on.
+If, for example, Claude produces a response that contains a function signature like <code>ping_address(&quot;8.8.8.8&quot;)</code>, then we can take that signature and do something with it, and we will all pretend that Claude did all that work.</p>
+<p>We can slightly modify the script to do just that:</p>
+<pre class="language-python"><code class="language-python"><span class="token comment"># Previous code</span>
+<span class="token keyword">if</span> content<span class="token punctuation">.</span><span class="token builtin">type</span> <span class="token operator">==</span> <span class="token string">"text"</span><span class="token punctuation">:</span>
+    conversation<span class="token punctuation">.</span>append<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">"role"</span><span class="token punctuation">:</span> <span class="token string">"assistant"</span><span class="token punctuation">,</span> <span class="token string">"content"</span><span class="token punctuation">:</span> content<span class="token punctuation">.</span>text<span class="token punctuation">}</span><span class="token punctuation">)</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"\u001b[93mClaude\u001b[0m: </span><span class="token interpolation"><span class="token punctuation">{</span>content<span class="token punctuation">.</span>text<span class="token punctuation">}</span></span><span class="token string">\n"</span></span><span class="token punctuation">)</span>
+
+    <span class="token keyword">if</span> content<span class="token punctuation">.</span>text<span class="token punctuation">.</span>startswith<span class="token punctuation">(</span><span class="token string">"ping_address("</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        ip_address <span class="token operator">=</span> re<span class="token punctuation">.</span>search<span class="token punctuation">(</span><span class="token string">r"ping_address\((.+)\)"</span><span class="token punctuation">,</span> content<span class="token punctuation">.</span>text<span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span>
+        ping_response <span class="token operator">=</span> ping_address<span class="token punctuation">(</span>ip_address<span class="token punctuation">)</span>
+
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"\u001b[93mClaude\u001b[0m: Tool usage requested, pinging </span><span class="token interpolation"><span class="token punctuation">{</span>ip_address<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"\u001b[93mClaude\u001b[0m: </span><span class="token interpolation"><span class="token punctuation">{</span>ping_response<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span></code></pre>
+<p>Now we can simply implement the <code>ping_address</code> function, like so:</p>
+<pre class="language-python"><code class="language-python"><span class="token keyword">def</span> <span class="token function">ping_address</span><span class="token punctuation">(</span>ip<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    ip <span class="token operator">=</span> ip<span class="token punctuation">.</span>replace<span class="token punctuation">(</span><span class="token string">'"'</span><span class="token punctuation">,</span> <span class="token string">''</span><span class="token punctuation">)</span>
+    <span class="token keyword">try</span><span class="token punctuation">:</span>
+        response <span class="token operator">=</span> requests<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">"https://"</span> <span class="token operator">+</span> ip<span class="token punctuation">,</span> timeout<span class="token operator">=</span><span class="token number">5</span><span class="token punctuation">)</span>
+        message <span class="token operator">=</span> <span class="token string-interpolation"><span class="token string">f"</span><span class="token interpolation"><span class="token punctuation">{</span>ip<span class="token punctuation">}</span></span><span class="token string"> is reachable, status code </span><span class="token interpolation"><span class="token punctuation">{</span>response<span class="token punctuation">.</span>status_code<span class="token punctuation">}</span></span><span class="token string">"</span></span>
+    <span class="token keyword">except</span> requests<span class="token punctuation">.</span>ConnectionError<span class="token punctuation">:</span>
+        message <span class="token operator">=</span> <span class="token string-interpolation"><span class="token string">f"Failed to reach </span><span class="token interpolation"><span class="token punctuation">{</span>ip<span class="token punctuation">}</span></span><span class="token string">"</span></span>
+    <span class="token keyword">return</span> message</code></pre>
+<p>aaand done. Just like this, whenever Claude responds with the <code>ping_address</code> function, I will take it and run the appropriate software, and give back the output to Claude. The LLM never directly interacted with this tool, but for all intents and purposes, it will look like it did.</p>
+<p>You can find the modified script as <a href="https://github.com/gvisona/python-ai-agent/blob/main/chat_with_manual_tool_implementation.py">chat_with_manual_tool_implementation.py</a>.</p>
+<p>We just have one problem remaining: how do we get Claude to output this function signature? In this implementation, the only solution is to coax the model explicitly with a prompt such as:</p>
+<pre><code>When, in future messages, I ask you to check if Google DNS is available, you will 
+respond only with the text `ping_address(&quot;8.8.8.8&quot;)`. All other queries should be 
+answered normally. Can you do that?
+</code></pre>
+<p>The resulting conversation will be something like this:</p>
+<blockquote>
+<pre><code>You: When, in future messages, I ask you to check if Google DNS is available, you will 
+respond only with the text `ping_address(&quot;8.8.8.8&quot;)`. All other queries should be 
+answered normally. Can you do that?
+
+Claude: I understand your request. When you ask me to check if Google DNS is available 
+in future messages, I will respond only with the text `ping_address(&quot;8.8.8.8&quot;)`. 
+I'll answer all other questions normally.
+
+You: Is Google DNS available?
+
+Claude: ping_address(&quot;8.8.8.8&quot;)
+
+Claude: Tool usage requested, pinging &quot;8.8.8.8&quot;
+
+Claude: 8.8.8.8 is reachable, status code 200
+
+You:
+</code></pre>
+</blockquote>
+<p>We just had our chat assistant check the connectivity of the Google DNS automatically after we set it up to recognize the kind of request we want to be able to make.
+The whole process is a bit of a trick, as we are really the ones running the ping check. But with a bit more care in the implementation, the interaction between LLMs and tools can feel much more seamless.</p>
+<p>The actual implementation of tool usage for LLMs is just a more polished version of this trick that we implemented, which we will see in action in the next section.</p>
+<h2>Actual tool usage: structured tool descriptions</h2>
+<p>The way to implement actual tool usage is to provide the model with a structured description of your tool, how to call it, and which parameters to use. Each model provider will go about this with a slightly different approach, but the core idea remains the same.</p>
+<p>Looking at the documentation on <a href="https://docs.anthropic.com/en/docs/build-with-claude/tool-use/overview">how to implement tool calling for Claude</a>, we see that the SDK implementation expects to receive a JSON structured description of the tool. Behind the scenes, that description is unrolled into <a href="https://docs.anthropic.com/en/docs/build-with-claude/tool-use/overview#tool-use-system-prompt">this system prompt</a>, which gives the necessary context to the model.</p>
+<p>Let us create a separate <a href="https://github.com/gvisona/python-ai-agent/blob/main/chat_with_tools.py">chat_with_tools.py</a> script and add the necessary description.</p>
+<p>We can now define our <code>ping_address</code> tool:</p>
+<pre class="language-python"><code class="language-python">TOOLS <span class="token operator">=</span> <span class="token punctuation">[</span>
+    <span class="token punctuation">{</span>
+        <span class="token string">"name"</span><span class="token punctuation">:</span> <span class="token string">"ping_address"</span><span class="token punctuation">,</span>
+        <span class="token string">"description"</span><span class="token punctuation">:</span> <span class="token string">"Check the availability of an IP address, by pinging the service and parsing the response."</span><span class="token punctuation">,</span>
+        <span class="token string">"input_schema"</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+            <span class="token string">"type"</span><span class="token punctuation">:</span> <span class="token string">"object"</span><span class="token punctuation">,</span>
+            <span class="token string">"properties"</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+                <span class="token string">"ip_address"</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+                    <span class="token string">"type"</span><span class="token punctuation">:</span> <span class="token string">"string"</span><span class="token punctuation">,</span>
+                    <span class="token string">"description"</span><span class="token punctuation">:</span> <span class="token string">"The IP address of the service to check."</span>
+                <span class="token punctuation">}</span><span class="token punctuation">,</span>
+            <span class="token punctuation">}</span><span class="token punctuation">,</span>
+            <span class="token string">"required"</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"ip_address"</span><span class="token punctuation">]</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">]</span></code></pre>
+<p>and alter the <code>run_inference</code> function to accept the tool's description:</p>
+<pre class="language-python"><code class="language-python"><span class="token keyword">def</span> <span class="token function">run_inference</span><span class="token punctuation">(</span>messages<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    response <span class="token operator">=</span> client<span class="token punctuation">.</span>messages<span class="token punctuation">.</span>create<span class="token punctuation">(</span>
+        max_tokens<span class="token operator">=</span><span class="token number">1024</span><span class="token punctuation">,</span>
+        tools<span class="token operator">=</span>TOOLS<span class="token punctuation">,</span>
+        messages<span class="token operator">=</span>messages<span class="token punctuation">,</span>
+        model<span class="token operator">=</span><span class="token string">"claude-3-7-sonnet-latest"</span><span class="token punctuation">,</span>
+        stream<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span>
+    <span class="token keyword">return</span> response</code></pre>
+<p>Note that we could add other tools as well, but for this proof of concept I will focus on just a single tool. For an example of interactions between multiple tools, please check out the blogpost linked at the beginning.</p>
+<p>After the changes, the model's responses will include additional metadata to signal when it has decided to make use of one of the provided tools.
+Specifically, the content of the response will have type <code>tool_use</code>, and have a <code>name</code> parameter that describes the name of the tool that Claude has decided to use.
+We simply have to alter the parsing of Claude's response to make proper use of this metadata:</p>
+<pre class="language-python"><code class="language-python"><span class="token comment"># previous code</span>
+<span class="token keyword">for</span> content <span class="token keyword">in</span> response<span class="token punctuation">.</span>content<span class="token punctuation">:</span>
+    <span class="token keyword">if</span> content<span class="token punctuation">.</span><span class="token builtin">type</span> <span class="token operator">==</span> <span class="token string">"text"</span><span class="token punctuation">:</span>
+        conversation<span class="token punctuation">.</span>append<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">"role"</span><span class="token punctuation">:</span> <span class="token string">"assistant"</span><span class="token punctuation">,</span> <span class="token string">"content"</span><span class="token punctuation">:</span> content<span class="token punctuation">.</span>text<span class="token punctuation">}</span><span class="token punctuation">)</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"\u001b[93mClaude\u001b[0m: </span><span class="token interpolation"><span class="token punctuation">{</span>content<span class="token punctuation">.</span>text<span class="token punctuation">}</span></span><span class="token string">\n"</span></span><span class="token punctuation">)</span>
+    <span class="token keyword">elif</span> content<span class="token punctuation">.</span><span class="token builtin">type</span> <span class="token operator">==</span> <span class="token string">"tool_use"</span><span class="token punctuation">:</span>
+        <span class="token keyword">if</span> content<span class="token punctuation">.</span>name <span class="token operator">==</span> <span class="token string">"ping_address"</span><span class="token punctuation">:</span>
+            ping_response <span class="token operator">=</span> ping_address<span class="token punctuation">(</span><span class="token operator">**</span>content<span class="token punctuation">.</span><span class="token builtin">input</span><span class="token punctuation">)</span>
+            <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"\u001b[93mClaude\u001b[0m: </span><span class="token interpolation"><span class="token punctuation">{</span>ping_response<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+            conversation<span class="token punctuation">.</span>append<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">"role"</span><span class="token punctuation">:</span> <span class="token string">"assistant"</span><span class="token punctuation">,</span> <span class="token string">"content"</span><span class="token punctuation">:</span> ping_response<span class="token punctuation">}</span><span class="token punctuation">)</span></code></pre>
+<p>Now, when we run the chat, we do not have to coax the model as before. We can ask something like:</p>
+<pre><code>Is the Google DNS at the IP address 8.8.8.8 available?
+</code></pre>
+<p>and the LLM will decide that the <code>ping_address</code> tool it was provided with could provide the correct response.</p>
+<p>The resulting chat will look something like:</p>
+<blockquote>
+<pre><code>You: Is the Google DNS at the IP address 8.8.8.8 available?
+
+Claude: I can check the availability of the Google DNS server at IP address 8.8.8.8 
+for you by pinging it.
+
+Claude: 8.8.8.8 is reachable, status code 200
+You: What service did you check, and what was its status?
+
+Claude: Let me clarify what I checked in my previous response:
+
+I pinged the Google DNS server at IP address 8.8.8.8 using the ping_address function. 
+The result showed that this IP address is reachable with a status code of 200, 
+which indicates that the Google DNS service is currently available and functioning 
+properly.
+
+A status code of 200 is generally considered a &quot;success&quot; response, confirming that
+the server at that IP address is operational and responding to requests.
+
+You:
+</code></pre>
+</blockquote>
+<p>We have built an Agent capable of interacting with other systems in less than 70 lines of code.
+While the workflow of tool calling in LLMs is a bit hacky, the end result is exactly what we are looking for.</p>
+<p>As long as you can guarantee the structural correctness of the tool call signatures produced by Claude (which I am not yet sure how to address), then we can all pretend that the model is calling the tools, while we pass on its messages to the correct recipients.</p>
+</div>
+         <p xmlns:cc="http://creativecommons.org/ns#" xmlns:dct="http://purl.org/dc/terms/"><span property="dct:title">This blogpost</span> by <a rel="cc:attributionURL dct:creator" property="cc:attributionName" href="https://www.gvisona.com">Giovanni Visonà</a> is licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">CC BY-NC-SA 4.0<img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/sa.svg?ref=chooser-v1" alt=""></a></p> 
+
+        
+
+    
+
+    
+        <div class="comments">
+            
+
+
+<div id="disqus_thread">
+<button class="load-disqus-button button" onclick="loadDisqus();return false;">Show/Post Comments</button> 
+</div>
+
+<script 
+   data-cookiecategory="comments" type="text/plain" 
+>
+  var disqus_shortname = "gvisona";
+  var disqus_config = function () {
+    this.page.url = '/blog/playing-prometheus-with-llms/';
+    this.page.identifier = '/blog/playing-prometheus-with-llms/';
+  };
+  var is_disqus_loaded = false;
+  function loadDisqus() {  
+    if (!is_disqus_loaded){
+      is_disqus_loaded = true;
+      var d = document, s = d.createElement('script');
+      s.src = '//' + disqus_shortname +'.disqus.com/embed.js';   
+      s.setAttribute('data-timestamp', +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  };
+</script>
+        </div>
+    
+
+
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+
+  <div class="footer">
+  <div class="container">
+    <div class="row">
+
+        <div class="col-12 col-md-4">
+          <div class="footer-info">
+            
+              <h2>Giovanni Visonà</h2>
+            
+
+            
+              <p>Personal blog and résumé. I use this website to share the things I like to learn. The content of this blog is not permitted for use in training generative artificial intelligence (AI) models without explicit consent. The author reserves all rights to license uses of this work for generative AI training and development.</p>
+            
+          </div>
+
+          
+            
+
+
+<div class="social" id="social">
+  
+  <a href="https://github.com/gvisona" target="blank" title="Github">
+    <i class="fab fa-github"></i>
+  </a>
+  
+  <a href="https://www.linkedin.com/in/giovanni-visona/" target="blank" title="Linkedin">
+    <i class="fab fa-linkedin"></i>
+  </a>
+  
+  <a href="https://orcid.org/0000-0002-7878-5448" target="blank" title="ORCID">
+    <i class="fab fa-orcid"></i>
+  </a>
+  
+</div>
+
+          
+          
+        </div>
+
+        <div class="col-12 col-md-8 mt-gutter mt-md-0">
+          <div class="row justify-content-end">
+
+            
+              <div class="col-12 col-md-3 mt-gutter mt-md-0">
+                <div class="footer-menu">
+                  
+                    <h3>About</h3>
+                  
+                  <div class="menu-footer">
+  <ul>
+    
+      <li class="">
+        <a href="/posts/">Blog</a>
+      </li>
+    
+      <li class="">
+        <a href="/about/">About</a>
+      </li>
+    
+      <li class="">
+        <a href="/contact/">Contact</a>
+      </li>
+    
+  </ul>
+</div>
+
+                </div>
+              </div>
+            
+
+            
+
+            
+        
+          </div>
+        </div>
+      
+    </div>
+    
+
+  </div>
+</div>
+
+
+  <div class="bottom">
+  <div class="container relative">
+    <div class="row align-items-center justify-content-between">
+      <div class="col-auto">
+       
+        
+          <div class="menu-bottom">
+  <ul>
+    
+      <li class="menu-item-Terms and Conditions">
+        <a href="/terms-and-conditions/">Terms and Conditions</a>
+      </li>
+    
+      <li class="menu-item-Privacy Policy">
+        <a href="/privacy-policy/">Privacy Policy</a>
+      </li>
+    
+  </ul>
+</div>
+        
+        
+          <a href="#" data-cc="c-settings">Cookies</a>
+        
+        
+          <div class="copyright">© 2025 Giovanni Visonà</div>
+        
+        
+        
+          <a class="feed" href="/feed.xml">
+            <i class="fas fa-feed"></i>
+          </a>
+        
+        
+      </div>
+         
+    </div>
+  </div>
+</div>
+
+
+<script type="text/javascript" src="/assets/js/scripts.js"></script>
+
+<script type="text/javascript" src="/assets/js/hamburger.js"></script>
+<script type="text/javascript" src="/assets/js/darkModeSwitch.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>
