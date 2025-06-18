@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta content="ie=edge" http-equiv="x-ua-compatible">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+
+    <title>Hitchhiker's Guide to Distributed Machine Learning | Giovanni Visonà</title>
+
+
+  <meta name="description" content="How do we train large scale ML models over multiple GPUs?"/>
+
+
+
+
+    <meta property="og:type" content="website"/>
+<meta property="og:url" content=""/>
+
+
+  <meta property="og:title" content="Hitchhiker's Guide to Distributed Machine Learning"/>
+
+
+
+  <meta property="og:description" content="How do we train large scale ML models over multiple GPUs?"/>
+
+
+
+  <meta property="og:image" content="/assets/images/gen/blog/blog-2025-06-09/blog-2025-06-09-1260x540.png"/>
+
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:site" content="@gvisona" />
+<meta name="twitter:creator" content="@gvisona" />
+    <link rel="alternate" type="application/atom+xml" title="Giovanni Visonà" href="/feed.xml">
+    <link rel="icon" href="/assets/images/favicon/favicon.png">
+
+
+    <link href="/assets/css/style.css" rel="stylesheet">
+    <link href="/assets/css/main.css" rel="stylesheet">
+
+    
+      <script>
+          localStorage.getItem('darkMode') === 'true' && document.documentElement.setAttribute('data-bs-theme', 'dark');
+      </script>
+    
+
+    
+      <!-- https://github.com/orestbida/cookieconsent -->
+
+<link rel="stylesheet" href="/assets/css/cookieconsent.css">
+<script defer src="/assets/js/cookieconsent.js"></script>
+
+<!-- Inline script -->
+<script>
+    window.addEventListener('load', function () {
+
+        // obtain plugin
+        var cc = initCookieConsent();
+
+        // run plugin with your configuration
+        cc.run({
+            current_lang: 'en',
+            autoclear_cookies: true,                   // default: false
+            page_scripts: true,                        // default: false
+
+            // mode: 'opt-in'                          // default: 'opt-in'; value: 'opt-in' or 'opt-out'
+            // delay: 0,                               // default: 0
+            // auto_language: '',                      // default: null; could also be 'browser' or 'document'
+            // autorun: true,                          // default: true
+            // force_consent: false,                   // default: false
+            // hide_from_bots: true,                   // default: true
+            // remove_cookie_tables: false             // default: false
+            // cookie_name: 'cc_cookie',               // default: 'cc_cookie'
+            // cookie_expiration: 182,                 // default: 182 (days)
+            // cookie_necessary_only_expiration: 182   // default: disabled
+            // cookie_domain: location.hostname,       // default: current domain
+            // cookie_path: '/',                       // default: root
+            // cookie_same_site: 'Lax',                // default: 'Lax'
+            // use_rfc_cookie: false,                  // default: false
+            // revision: 0,                            // default: 0
+
+            onFirstAction: function (user_preferences, cookie) {
+                // callback triggered only once on the first accept/reject action
+            },
+
+            onAccept: function (cookie) {
+                // callback triggered on the first accept/reject action, and after each page load
+            },
+
+            onChange: function (cookie, changed_preferences) { 
+                // If analytics category is disabled => disable google analytics 
+                if (!cc.allowedCategory('analytics')) { 
+                    typeof gtag === 'function' && gtag('consent', 'update', { 
+                        'analytics_storage': 'denied' 
+                    }); 
+                } 
+            }, 
+
+            languages: {
+                'en': {
+                    consent_modal: {
+                        title: 'We use cookies!',
+                        description: 'Hi, this website uses essential cookies to ensure its proper operation and tracking cookies to understand how you interact with it. The latter will be set only after consent. <button type="button" data-cc="c-settings" class="cc-link">Let me choose</button>',
+                        primary_btn: {
+                            text: 'Accept all',
+                            role: 'accept_all'              // 'accept_selected' or 'accept_all'
+                        },
+                        secondary_btn: {
+                            text: 'Reject all',
+                            role: 'accept_necessary'        // 'settings' or 'accept_necessary'
+                        }
+                    },
+                    settings_modal: {
+                        title: 'Cookie preferences',
+                        save_settings_btn: 'Save settings',
+                        accept_all_btn: 'Accept all',
+                        reject_all_btn: 'Reject all',
+                        close_btn_label: 'Close',
+                        // cookie_table_caption: 'Cookie list',
+                        cookie_table_headers: [
+                            { col1: 'Name' },
+                            { col2: 'Domain' },
+                            { col3: 'Expiration' },
+                            { col4: 'Description' }
+                        ],
+                        blocks: [
+                            {
+                                title: 'Cookie usage 📢',
+                                description: 'I use cookies to ensure the basic functionalities of the website and to enhance your online experience. You can choose for each category to opt-in/out whenever you want. For more details relative to cookies and other sensitive data, please read the full <a href="#" class="cc-link">privacy policy</a>.'
+                            }, {
+                                title: 'Strictly necessary cookies',
+                                description: 'These cookies are essential for the proper functioning of my website. Without these cookies, the website would not work properly',
+                                toggle: {
+                                    value: 'necessary',
+                                    enabled: true,
+                                    readonly: true          // cookie categories with readonly=true are all treated as "necessary cookies"
+                                }
+                            }, {
+                                title: 'Performance and Analytics cookies',
+                                description: 'These cookies allow the website to remember the choices you have made in the past',
+                                toggle: {
+                                    value: 'analytics',     // your cookie category
+                                    enabled: false,
+                                    readonly: false
+                                },
+                                cookie_table: [             // list of all expected cookies
+                                    {
+                                        col1: '^_ga',       // match all cookies starting with "_ga"
+                                        col2: 'google.com',
+                                        col3: '2 years',
+                                        col4: 'description ...',
+                                        is_regex: true
+                                    },
+                                    {
+                                        col1: '_gid',
+                                        col2: 'google.com',
+                                        col3: '1 day',
+                                        col4: 'description ...',
+                                    }
+                                ]
+                            }, {
+                                title: 'Comments & Publishing cookies',
+                                description: 'These cookies allow you to interact, comment and publish to the website',
+                                toggle: {
+                                    value: 'comments',     // your cookie category
+                                    enabled: false,
+                                    readonly: false
+                                },
+                                cookie_table: [             // list of all expected cookies
+                                    {
+                                        col1: 'disqus_unique',       // match all cookies starting with "_ga"
+                                        col2: 'disqus.com',
+                                        col3: '2 years',
+                                        col4: 'used to make comments on blog posts',
+                                        is_regex: false
+                                    }
+                                ]
+                            },
+                            {
+                                title: 'More information',
+                                description: 'For any queries in relation to our policy on cookies and your choices, please <a class="cc-link" href="#yourcontactpage">contact us</a>.',
+                            }
+                        ]
+                    }
+                }
+            }
+        });
+    });
+</script>
+    
+
+    
+
+    <link href="/assets/css/fonts.css" rel="stylesheet">
+
+
+
+
+    
+
+
+
+
+
+
+
+  </head>
+<body class="page page-post page-post-2 has-static-header">
+
+<div class="menu-main-mobile " id="menu-main-mobile">
+  
+  <div class="menu-main-mobile-top">
+    <div id="close-overlay" class="menu-main-close">
+      <div class="hamburger"></div>
+    </div>
+  </div>
+
+  <div class="menu-main-mobile-center">
+    
+      <ul class="menu">
+        
+          <li class="menu-item-home">
+            <a href="/">Home</a>
+          </li>
+        
+          <li class="menu-item-blog">
+            <a href="/blog/">Blog</a>
+          </li>
+        
+          <li class="menu-item-about">
+            <a href="/about/">About</a>
+          </li>
+        
+          <li class="menu-item-résumé">
+            <a href="/resume/">Résumé</a>
+          </li>
+        
+          <li class="menu-item-contact">
+            <a href="/contact/">Contact</a>
+          </li>
+        
+      </ul>
+    
+  </div>
+
+  <div class="menu-main-mobile-bottom">
+    
+      
+
+
+<div class="social" id="social">
+  
+  <a href="https://github.com/gvisona" target="blank" title="Github">
+    <i class="fab fa-github"></i>
+  </a>
+  
+  <a href="https://www.linkedin.com/in/giovanni-visona/" target="blank" title="Linkedin">
+    <i class="fab fa-linkedin"></i>
+  </a>
+  
+  <a href="https://orcid.org/0000-0002-7878-5448" target="blank" title="ORCID">
+    <i class="fab fa-orcid"></i>
+  </a>
+  
+</div>
+
+    
+    
+  </div>
+
+</div>
+
+
+
+
+<div id="header" class='header '>
+  <div class="container">
+    <div class="logos">
+  <div class="logo logo-desktop">
+    
+      <div class="logo-image">
+        <a href="/">
+          <img height="30px" width="30px" alt="Giovanni Visonà Logo" src="/assets/images/logo/logo.png"/>
+        </a>
+      </div>
+    
+  
+    
+      <div class="logo-text"><a href="/">Giovanni Visonà</a></div>
+    
+    
+  </div>
+
+  <div class="logo logo-desktop-invert">
+    
+    
+      <div class="logo-image">
+        <a href="/">
+          <img height="30px" width="30px" alt="Giovanni Visonà Logo" src="/assets/images/logo/logo-invert.svg"/>
+        </a>
+      </div>
+    
+  
+    
+      <div class="logo-text"><a href="/">Giovanni Visonà</a></div>
+    
+    
+  </div>
+
+  <div class="logo logo-mobile">
+    
+    
+      <div class="logo-image">
+        <a href="/">
+          <img height="28px" width="28px" alt="Giovanni Visonà Logo" src="/assets/images/logo/logo-mobile.svg"/>
+        </a>
+      </div>
+    
+  
+    
+    
+  </div>
+
+
+  <div class="logo logo-mobile-invert">
+    
+    
+      <div class="logo-image">
+        <a href="/">
+          <img height="28px" width="28px" alt="Giovanni Visonà Logo" src="/assets/images/logo/logo-invert-mobile.svg"/>
+        </a>
+      </div>
+    
+  
+    
+
+  </div>
+
+</div>
+
+
+    <div class="menu-main">
+  <ul>
+    
+      
+        
+          
+        
+        <li class=" ">
+          <a href="/" >Home</a>
+        </li>
+      
+    
+      
+        
+          
+        
+        <li class=" ">
+          <a href="/blog/" >Blog</a>
+        </li>
+      
+    
+      
+        
+          
+        
+        <li class=" ">
+          <a href="/about/" >About</a>
+        </li>
+      
+    
+      
+        
+          
+        
+        <li class=" ">
+          <a href="/resume/" >Résumé</a>
+        </li>
+      
+    
+      
+        
+          
+        
+        <li class=" ">
+          <a href="/contact/" >Contact</a>
+        </li>
+      
+    
+  </ul>
+</div>
+
+    
+    <div class="hamburger-trigger" id="toggle-menu-main-mobile">
+  <button class="hamburger">Menu</button>
+</div>
+  </div>
+</div>
+
+<div id="wrapper" class="wrapper">     
+  
+<div class="section">
+  <div class="container post-header">
+    <div class="row justify-content-center">
+
+      <div class="col-12 col-lg-12">
+        
+          <div class="post-image">
+            <img src="/assets/images/gen/blog/blog-2025-06-09/blog-2025-06-09-1260x540.png" alt="Hitchhiker's Guide to Distributed Machine Learning" />
+          </div>
+        
+      </div>
+    </div>
+
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-10">
+          
+          <div class="post-title">
+            <h1>Hitchhiker's Guide to Distributed Machine Learning</h1>
+          </div>
+
+          
+            <div class="post-description">
+              <p>How do we train large scale ML models over multiple GPUs?</p>
+            </div>
+          
+
+          
+            <div class="post-date">09 June 2025</div>
+          
+          
+          
+          <div class="post-categories">
+          
+  
+    
+
+
+
+<div class="category-link">
+<a href="/category/machine-leanrning">
+  Machine Leanrning
+</a>
+
+</div>
+  
+    
+
+
+
+<div class="category-link">
+<a href="/category/large-language-models">
+  Large Language Models
+</a>
+
+</div>
+  
+
+          </div>
+          
+
+          
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section pt-0">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-10">
+        <div class="content"><h2>Who am I?</h2>
+<p>Hi, I am Giovanni, a ML engineer working on biomedical applications of machine learning and AI.
+Creating pipelines to manipulate data and train models takes up most of my normal workdays.
+You can read more about it <a href="www.gvisona.com/about">in the About Me page</a>.</p>
+<h1>Distributed ML</h1>
+<p>The scale of ML models and data has truly reached some impressive levels, that make it challenging to even set up
+training. For example, <a href="https://huggingface.co/deepseek-ai/DeepSeek-V3">DeepSeek-v3 685B parameters</a> takes up more than 400GB in memory;
+this alone is more than 5 times the memory capacity of a NVIDIA A100, one of the best GPUs available at the commercial level.
+And this does not even take into account the need for storing tensors, gradients, and optimizer states. In practice, the number of GPUs used is far higher.
+Megatron-LM, for example, was used to train GPT models with up to 462B parameters, which needed
+<a href="https://github.com/NVIDIA/Megatron-LM?tab=readme-ov-file#training-speed-and-scalability">6144 H100 GPUs</a>.</p>
+<p>The other side of the coin is that large-scale models require even more data. For example, <a href="https://commoncrawl.org/">Common Crawl</a>, one of the primary resources
+used to train modern LLMs, is over 1.3TB. At this level, even getting through a single epoch of training requires herculean efforts.</p>
+<p>Training models at this scale requires the usage of GPUs, which can perform the necessary calculations at a rate enormously faster than CPUs. At the same time,
+the amount of memory available for graphics cards is much lower, requiring careful tuning of the whole process.
+Balancing these challenges is an exquisite engineering effort, through which we can coordinate thousands of machines to maximize throughput within the allowed constraints.
+So how is this achieved?</p>
+<h2>The tradeoff of distributed ML</h2>
+<p>Let us first get the most important notion out of the way:</p>
+<blockquote>
+<p>Distributed training imposes additional costs in terms of memory and communication overhead. It is only worth using
+distributed methods if the advantages outweigh the costs, or if there is no other practical alternative.</p>
+</blockquote>
+<p>In distributed training methods, the machines involved have to communicate back and forth to share and aggregate partial results,
+and many intermediate stages are stored, used, and discarded, only to then be retrieved later on.
+If you are training a 1M parameters network on MNIST, you won't benefit from any form of parallelism. But if your dataset gets really large,
+or if your model cannot possibly fit into a single GPU, then you might want to take a look at the options available.</p>
+<h2>The types of parallelism</h2>
+<p>Depending on which is the limiting factor for your model, there are two main paradigms of parallelization that you might adopt: data parallelization
+or model parallelization. If you are working at the edge of current research, you might need to mix both, but that strays beyond this simple blogpost.</p>
+<figure >
+  <img src="/assets/images/gen/content/blog-2025-06-09/Types_of_parallelism.webp" alt="Schematic of the differences between data and model parallelisms.">
+  <figcaption>
+    <h4>The two main approaches to distributed ML.</h4>
+    <p>Generally the training process is distributed across GPUs by partitioning either the data or the model parameters across devices.</p>
+  </figcaption>
+</figure>
+<p>Data parallelization generally consists in creating a copy of your model for each GPU, and partitioning the dataset across the devices.
+Model parallelism, on the other hand, splits a model's parameters across multiple machines, which complicates considerably the forward and backward passes
+of a model.
+Let us see in more details the steps involved and the advantages for each approach.
+As a note: extremely advanced applications will require a mixture of both approaches, but if you have a strong need for these methods,
+you are training insanely complex models that push engineering to the limit, and are not a beginner in any shape or form.</p>
+<h2>Data parallelism</h2>
+<p>Data parallelism generally consists in creating a copy of the model for each device, and assigning a partition of the dataset to each GPU.
+Each copy performs a forward and backward pass, then the updates are gathered and relayed to all models. Often, the setup underlying data parallelism
+involves a separate parameter server that gathers updates from the copies of the model and takes care of distributing information on the updates.</p>
+<figure >
+  <img src="/assets/images/gen/content/blog-2025-06-09/data_parallelism.png" alt="Schematic of data parallelism.">
+  <figcaption>
+    <h4>Data parallelism often relies on a server that coordinates updates.</h4>
+    <p>Model copies perform training iterations independently, communicate the subsequent updates, and distribute the changes.
+Image from [1].</p>
+  </figcaption>
+</figure>
+<p>The use of a parameter is not a strict requirement, several popular setups make use of direct inter-GPU communication to relay changes to models.
+Pytorch's <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html#torch.nn.parallel.DistributedDataParallel">Distributed Data Parallel (DDP)</a>,
+for example, uses direct communication that leverages a Ring AllReduce algorithm for efficient performance.</p>
+<p>Data parallelism can be synchronous (i.e., all models are kept up to date), or asynchronous (updates are coordinated at different times).
+Synchronous parallelism ensures that all the copies of the model are updated before continuing on with the training. This ensures consistency,
+but may introduce some idle times as certain machines have to wait for others to finish their iterations.
+Asynchronous updates, on the other hand, reduce this idle &quot;cost&quot; but risk introducing diverging values if the updates are not properly coordinated.</p>
+<p>In general, the tradeoff of data parallelism is one of time vs resources:</p>
+<blockquote>
+<p>If your model fits in a single GPU and a single forward and backward pass takes a relatively hefty amount of time, you might want to consider data parallelism.</p>
+</blockquote>
+<p>This holds especially true if your dataset is large, and getting through a single epoch takes considerable resources. In this case, expending more computational
+power to cut down on training time might be a worthy tradeoff.</p>
+<h2>Model parallelism</h2>
+<p>While data parallelism is useful when we have to slog through large amounts of data, model parallelism becomes relevant when the model itself becomes sufficiently big.</p>
+<blockquote>
+<p>When reaching certain model sizes, the use of parallelism might become less of a choice and more of a hard constraint.</p>
+</blockquote>
+<p>In model parallelism, the parameters of a model are split up between separate GPUs. An intuitive approach would be to assign some layers to each GPU, but this
+approach actually introduces considerable amounts of idle time.</p>
+<figure >
+  <img src="/assets/images/gen/content/blog-2025-06-09/pipedream_sequential.png" alt="Schematic of pipelining.">
+  <figcaption>
+    <h4>Splitting a model by layers leads to considerable downtime across GPUs.</h4>
+    <p>The sequential nature of layers in most models means that each GPU has to wait for the rest to complete their turns before continuing with the training.
+Image from [2].</p>
+  </figcaption>
+</figure>
+<h3>Pipelining</h3>
+<p>A possible solution to this issue is the use of <strong>pipelining</strong>, i.e. feeding in the next round of operations before the previous cycle is completed.</p>
+<figure >
+  <img src="/assets/images/gen/content/blog-2025-06-09/pipedream_pipelining.png" alt="Schematic of naive model distribution.">
+  <figcaption>
+    <h4>The use of pipelining can obviate some of the issues with idle compute when splitting by layers.</h4>
+    <p>With pipelining, subsequent operations are begun before the previous steps have run their course.
+Image from [2].</p>
+  </figcaption>
+</figure>
+<p>With pipelining, the juggling of operations raises the computational and memory costs needed for training, but it ensures that the downtime of each machine
+is substantially reduced.</p>
+<p>Interestingly, pipelining is a technique also adopted to improve performance in CPUs, which pipe subsequent micro-ops before all the previous steps are
+complete, ensuring higher aggregate performance.</p>
+<p>However, pipelining is not the most popular approach for model parallelism, and alternative approaches have gained more popularity. Let us see why.</p>
+<h3>Sharding</h3>
+<p>Pipelining has a pretty high memory footprint, is hard to scale to a really high number of GPUs, and is challenging to debug.
+The alternative that has been supported by large tech companies is <strong>model sharding</strong>, a technique in which layers are broken up and spread across devices.</p>
+<p>This method scales better and allows for more efficient communication; furthermore, companies like Meta and Microsoft have developed their own polished libraries
+that implement model parallelism through sharding.
+<a href="https://engineering.fb.com/2021/07/15/open-source/fsdp/">Fully Sharded Data Parallel</a>, for example, is an approach that leverages a convenient factorization of the
+AllReduce operation to significantly improve model parallelism.
+Its explanation is quite simple in pseudo-code (taken from [3]):</p>
+<pre><code>FSDP forward pass:
+    for layer_i in layers:
+        all-gather full weights for layer_i
+        forward pass for layer_i
+        discard full weights for layer_i
+
+FSDP backward pass:
+    for layer_i in layers:
+        all-gather full weights for layer_i
+        backward pass for layer_i
+        discard full weights for layer_i
+        reduce-scatter gradients for layer_i
+</code></pre>
+<p>Essentially, each GPU keeps reconstructing a full layer, using it for either a forward or backward pass, and then discards the extra parameters or values that were collected,
+only to repeat the process again.
+This means that we are communicating information back and forth constantly, but also that we never have to keep the full model in one piece at any time.</p>
+<p>FSDP can be used to train models with hundreds of billions of parameters, on thousands of GPUs. The available library includes additional features such as CPU offloading
+and mixed precision training, and is extremely simple to use if you are working with frameworks such as PyTorch Lightning:</p>
+<p>As of Lightning 2.5.1, all you need to add is:</p>
+<pre class="language-python"><code class="language-python"><span class="token keyword">from</span> lightning<span class="token punctuation">.</span>pytorch<span class="token punctuation">.</span>strategies <span class="token keyword">import</span> FSDPStrategy
+
+trainer <span class="token operator">=</span> L<span class="token punctuation">.</span>Trainer<span class="token punctuation">(</span>accelerator<span class="token operator">=</span><span class="token string">"cuda"</span><span class="token punctuation">,</span> devices<span class="token operator">=</span><span class="token number">2</span><span class="token punctuation">,</span> strategy<span class="token operator">=</span>FSDPStrategy<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span></code></pre>
+<p>An alternative framework is DeepSpeed, a highly configurable library that can be used for massive reductions in memory consumption of models.
+<a href="https://www.microsoft.com/en-us/research/blog/zero-deepspeed-new-system-optimizations-enable-training-models-with-over-100-billion-parameters/">DeepSpeed</a> allows the choice of different levels of optimization, depending on the resources available:</p>
+<figure >
+  <img src="/assets/images/gen/content/blog-2025-06-09/deepspeed_optimizations.png" alt="Schematic of DeepSpeed optimizations.">
+  <figcaption>
+    <h4>DeepSpeed has different levels of optimizations that enable impressive memory savings.</h4>
+    <p>Different levels of optimization include optimizer states, model parameters, and gradients among the values to 
+communicate between devices.
+Image from [3].</p>
+  </figcaption>
+</figure>
+<p>With Pytorch Lightning, the use of DeepSpeed is just as simple as for FSDP:</p>
+<pre class="language-python"><code class="language-python"><span class="token keyword">from</span> lightning<span class="token punctuation">.</span>pytorch <span class="token keyword">import</span> Trainer
+
+model <span class="token operator">=</span> MyModel<span class="token punctuation">(</span><span class="token punctuation">)</span>
+trainer <span class="token operator">=</span> Trainer<span class="token punctuation">(</span>accelerator<span class="token operator">=</span><span class="token string">"gpu"</span><span class="token punctuation">,</span> devices<span class="token operator">=</span><span class="token number">4</span><span class="token punctuation">,</span> strategy<span class="token operator">=</span><span class="token string">"deepspeed_stage_1"</span><span class="token punctuation">,</span> precision<span class="token operator">=</span><span class="token number">16</span><span class="token punctuation">)</span>
+trainer<span class="token punctuation">.</span>fit<span class="token punctuation">(</span>model<span class="token punctuation">)</span></code></pre>
+<h2>A note of caution: tracking metrics</h2>
+<p>One of the tricky things to consider when using distributed ML methods is that the calculation of performance metrics and losses is not as trivial
+as in standard training. The results for different batches have to be communicated across devices and properly aggregated.</p>
+<p>This might mean the use of the <code>sync_dist</code> in a <a href="https://lightning.ai/docs/pytorch/stable/extensions/logging.html">Lightning <code>self.log</code> call</a>, or
+the use of packages like <a href="https://lightning.ai/docs/torchmetrics/stable/pages/overview.html">torchmetrics</a> that make this kind of functionality readily
+available.</p>
+<p>The specific approach will depend on the tech stack you are adopting, but ensure you give it adequate consideration!</p>
+<h2>Conclusion: is distributed ML for me?</h2>
+<p>Generally you will know if you have a need for distributed methods.</p>
+<p>Does it take your model a long time to crunch through your dataset and you have GPUs to spare? Consider data parallelism.</p>
+<p>Are you training a Behemoth that cannot possibly fit into a single GPU? Better take a closer look at model parallelism.</p>
+<p>Do you plan to handle models with many billions of parameters and datasets that range from terabytes upward? You'll probably need
+to use both.</p>
+<p>If none of these apply to you, you are likely better off sticking to the standard single-device training.</p>
+<h1>References</h1>
+<ol>
+<li>Dean, Jeffrey, et al. &quot;Large scale distributed deep networks.&quot; Advances in neural information processing systems 25 (2012).</li>
+<li>Harlap, Aaron, et al. &quot;Pipedream: Fast and efficient pipeline parallel dnn training.&quot; arXiv preprint arXiv:1806.03377 (2018).</li>
+<li><a href="https://engineering.fb.com/2021/07/15/open-source/fsdp/">Fully Sharded Data Parallel: faster AI training with fewer GPUs</a></li>
+<li><a href="https://www.microsoft.com/en-us/research/blog/zero-deepspeed-new-system-optimizations-enable-training-models-with-over-100-billion-parameters/">ZeRO &amp; DeepSpeed: New system optimizations enable training models with over 100 billion parameters</a></li>
+</ol>
+</div>
+         <p xmlns:cc="http://creativecommons.org/ns#" xmlns:dct="http://purl.org/dc/terms/"><span property="dct:title">This blogpost</span> by <a rel="cc:attributionURL dct:creator" property="cc:attributionName" href="https://www.gvisona.com">Giovanni Visonà</a> is licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">CC BY-NC-SA 4.0<img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/sa.svg?ref=chooser-v1" alt=""></a></p> 
+
+        
+
+    
+
+    
+        <div class="comments">
+            
+
+
+<div id="disqus_thread">
+<button class="load-disqus-button button" onclick="loadDisqus();return false;">Show/Post Comments</button> 
+</div>
+
+<script 
+   data-cookiecategory="comments" type="text/plain" 
+>
+  var disqus_shortname = "gvisona";
+  var disqus_config = function () {
+    this.page.url = '/blog/hitchhiker's-guide-to-distributed-machine-learning/';
+    this.page.identifier = '/blog/hitchhiker's-guide-to-distributed-machine-learning/';
+  };
+  var is_disqus_loaded = false;
+  function loadDisqus() {  
+    if (!is_disqus_loaded){
+      is_disqus_loaded = true;
+      var d = document, s = d.createElement('script');
+      s.src = '//' + disqus_shortname +'.disqus.com/embed.js';   
+      s.setAttribute('data-timestamp', +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  };
+</script>
+        </div>
+    
+
+
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+
+  <div class="footer">
+  <div class="container">
+    <div class="row">
+
+        <div class="col-12 col-md-4">
+          <div class="footer-info">
+            
+              <h2>Giovanni Visonà</h2>
+            
+
+            
+              <p>Personal blog and résumé. I use this website to share the things I like to learn. The content of this blog is not permitted for use in training generative artificial intelligence (AI) models without explicit consent. The author reserves all rights to license uses of this work for generative AI training and development.</p>
+            
+          </div>
+
+          
+            
+
+
+<div class="social" id="social">
+  
+  <a href="https://github.com/gvisona" target="blank" title="Github">
+    <i class="fab fa-github"></i>
+  </a>
+  
+  <a href="https://www.linkedin.com/in/giovanni-visona/" target="blank" title="Linkedin">
+    <i class="fab fa-linkedin"></i>
+  </a>
+  
+  <a href="https://orcid.org/0000-0002-7878-5448" target="blank" title="ORCID">
+    <i class="fab fa-orcid"></i>
+  </a>
+  
+</div>
+
+          
+          
+        </div>
+
+        <div class="col-12 col-md-8 mt-gutter mt-md-0">
+          <div class="row justify-content-end">
+
+            
+              <div class="col-12 col-md-3 mt-gutter mt-md-0">
+                <div class="footer-menu">
+                  
+                    <h3>About</h3>
+                  
+                  <div class="menu-footer">
+  <ul>
+    
+      <li class="">
+        <a href="/posts/">Blog</a>
+      </li>
+    
+      <li class="">
+        <a href="/about/">About</a>
+      </li>
+    
+      <li class="">
+        <a href="/contact/">Contact</a>
+      </li>
+    
+  </ul>
+</div>
+
+                </div>
+              </div>
+            
+
+            
+
+            
+        
+          </div>
+        </div>
+      
+    </div>
+    
+
+  </div>
+</div>
+
+
+  <div class="bottom">
+  <div class="container relative">
+    <div class="row align-items-center justify-content-between">
+      <div class="col-auto">
+       
+        
+          <div class="menu-bottom">
+  <ul>
+    
+      <li class="menu-item-Terms and Conditions">
+        <a href="/terms-and-conditions/">Terms and Conditions</a>
+      </li>
+    
+      <li class="menu-item-Privacy Policy">
+        <a href="/privacy-policy/">Privacy Policy</a>
+      </li>
+    
+  </ul>
+</div>
+        
+        
+          <a href="#" data-cc="c-settings">Cookies</a>
+        
+        
+          <div class="copyright">© 2025 Giovanni Visonà</div>
+        
+        
+        
+          <a class="feed" href="/feed.xml">
+            <i class="fas fa-feed"></i>
+          </a>
+        
+        
+      </div>
+         
+    </div>
+  </div>
+</div>
+
+
+<script type="text/javascript" src="/assets/js/scripts.js"></script>
+
+<script type="text/javascript" src="/assets/js/hamburger.js"></script>
+<script type="text/javascript" src="/assets/js/darkModeSwitch.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>
